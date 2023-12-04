@@ -1,7 +1,8 @@
 {
     "files.associations": {
         "signal.h": "c",
-        "select.h": "c"
+        "select.h": "c",
+        "netdb.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

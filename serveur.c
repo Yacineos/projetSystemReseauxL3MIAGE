@@ -3,6 +3,7 @@
  #include "stdlib.h"
  #include "unistd.h"
  #include "stdbool.h"
+ #include "string.h"
 
 // Les include pour traiter le signal
 #include <sys/wait.h>
@@ -25,22 +26,37 @@ void end_child(){
 
 // Serveur qui se met à l'écoute, reçoit une demande client, 
 // et y répond par l'envoi du message de réponse.
-int main(void){
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Wrong number of arguments : 1 argument needed\n");
+        exit(1);
+    } else if (atoi(argv[1]) < 9000 || atoi(argv[1]) > 9010) {
+        printf("Wrong argument value : An integer between 9000 and 9010 is expected\n");
+        exit(1);
+    }
+
     // Message qui signale au client la réussite de la connexion 
     char answer_msg[256] = "You have reached the server";
 
     // Création du socket d'écoute (socket())
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket == -1) {
+        printf("First socket creation error on server side");
+        exit(1);
+    } 
 
     // Création de la structure adresse du serveur (struct sockaddr_in)
     struct sockaddr_in sockaddr_server;
     sockaddr_server.sin_family = AF_INET;
-    sockaddr_server.sin_port = htons(9002);
+    sockaddr_server.sin_port = htons(atoi(argv[1]));
     sockaddr_server.sin_addr.s_addr = INADDR_ANY;
 
 
     // Association de la structure d'adresse et du socket d'écoute (bind())
-    bind(server_socket, (struct sockaddr*) &sockaddr_server, sizeof(sockaddr_server));
+    if (bind(server_socket, (struct sockaddr*) &sockaddr_server, sizeof(sockaddr_server)) != 0) {
+        perror("Bind failed");
+        exit(1);
+    }
 
 
     // déclaration d'une structure qui contient les 
@@ -50,12 +66,18 @@ int main(void){
     ac.sa_flags = SA_RESTART;
 
     // execution du handler au moment où on reçoit SIGCHLD
-    sigaction(SIGCHLD, &ac, NULL);
+    if (sigaction(SIGCHLD, &ac, NULL) != 0) {
+        perror("Sigaction failed");
+        exit(1);
+    }
 
     while (true) {
         // Attribution du rôle de socket d'écoute à notre socket (listen())
         // 5 => Taille max. de la file d'attente de connexion
-        listen(server_socket, 5);
+        if (listen(server_socket, 5) != 0) {
+            perror("Listen failed");
+            exit(1);
+        }
 
         // Création de la structure adresse du client (struct sockaddr_in)
         struct sockaddr_in sockaddr_client;
@@ -64,17 +86,26 @@ int main(void){
         // Valeur de retour = numéro du descripteur de fichier du socket de service
         int serv_adress_size = sizeof(sockaddr_client);
         int client_socket = accept(server_socket,(struct sockaddr*) &sockaddr_client, &serv_adress_size);
+        
+        if (client_socket == -1) {
+            printf("Accept failed on server side.");
+            exit(1);
+        } 
 
         // Envoi d'un message confirmant la connexion au serveur
         write(client_socket, answer_msg, sizeof(answer_msg));
         
         switch(fork()) {
             case -1:
-                perror("Fork failed.");
+                perror("Fork failed");
                 exit(1);
             case 0:
                 close(server_socket);
-                char buffer[256] = "This is an answer to the request you sent";
+                char buffer[256] = "";
+                memset(buffer, 0, 256);
+                read(client_socket, buffer, sizeof(buffer));
+                printf("Request received : %s\n", buffer);
+                strcpy(buffer, "This is an answer to the request you sent");
                 // Envoi du résultat de la requête client grâce au socket de service (send())
                 write(client_socket, buffer, 256);
 
