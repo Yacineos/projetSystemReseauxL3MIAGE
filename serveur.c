@@ -36,7 +36,7 @@ int main(void){
     int client_socket = accept(server_socket,(struct sockaddr*) &sockaddr_server, &serv_adress_size);
 
     // Envoi du résultat de la requête client grâce au socket de service (send())
-    char answer_msg[256];
+    char answer_msg[256] = "You have reached the server";
     send(client_socket, answer_msg, sizeof(answer_msg), 0);
 
     // Fermeture de la socket de service (close())
