@@ -23,20 +23,7 @@ void end_child(){
     wait(NULL);
 }
 
-
-// Serveur qui se met à l'écoute, reçoit une demande client, 
-// et y répond par l'envoi du message de réponse.
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Wrong number of arguments : 1 argument needed\n");
-        exit(1);
-    } else if (atoi(argv[1]) < 9000 || atoi(argv[1]) > 9010) {
-        printf("Wrong argument value : An integer between 9000 and 9010 is expected\n");
-        exit(1);
-    }
-
-    // Message qui signale au client la réussite de la connexion 
-    char answer_msg[256] = "You have reached the server";
+int server_socket_init(int port){
 
     // Création du socket d'écoute (socket())
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -48,7 +35,7 @@ int main(int argc, char *argv[]) {
     // Création de la structure adresse du serveur (struct sockaddr_in)
     struct sockaddr_in sockaddr_server;
     sockaddr_server.sin_family = AF_INET;
-    sockaddr_server.sin_port = htons(atoi(argv[1]));
+    sockaddr_server.sin_port = htons(port);
     sockaddr_server.sin_addr.s_addr = INADDR_ANY;
 
 
@@ -58,10 +45,14 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    return server_socket;
+}
 
-    // déclaration d'une structure qui contient les 
+
+int signal_setup(){
+    // déclaration d'une structure qui contient les actions à effectuer à la reception du signal
     struct sigaction ac;
-    // affectation des 
+    // affectation des valeurs
     ac.sa_handler = end_child;
     ac.sa_flags = SA_RESTART;
 
@@ -70,8 +61,15 @@ int main(int argc, char *argv[]) {
         perror("Sigaction failed");
         exit(1);
     }
+    return 0;
+}
 
-    while (true) {
+void server_loop(int server_socket){
+        
+    // Message qui signale au client la réussite de la connexion 
+    char answer_msg[256] = "You have reached the server";
+
+        while (true) {
         // Attribution du rôle de socket d'écoute à notre socket (listen())
         // 5 => Taille max. de la file d'attente de connexion
         if (listen(server_socket, 5) != 0) {
@@ -118,7 +116,30 @@ int main(int argc, char *argv[]) {
         close(client_socket);
         printf("Request completed and child process is dead\n");
     }
-    
+
+}
+
+
+// Serveur qui se met à l'écoute, reçoit une demande client, 
+// et y répond par l'envoi du message de réponse.
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Wrong number of arguments : 1 argument needed\n");
+        exit(1);
+    } else if (atoi(argv[1]) < 9000 || atoi(argv[1]) > 9010) {
+        printf("Wrong argument value : An integer between 9000 and 9010 is expected\n");
+        exit(1);
+    }
+
+    int server_socket = server_socket_init(atoi(argv[1]));
+
+    if(signal_setup() != 0){
+        printf("Erreur lors du traitement du signal");
+        exit(1);
+    }
+
+    server_loop(server_socket);
+
     // Fermeture du socket d'écoute (close())
     close(server_socket);
 
