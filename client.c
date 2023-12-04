@@ -30,7 +30,9 @@ int main(void){
     /*
     tester en cas d'erreurs de connexion
     */
-
+   if(connection_status == -1){
+        printf("there was an error making a connection to the remote socket \n\n");
+   }
    /*
    reception des données du serveur
    */
