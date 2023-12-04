@@ -2,7 +2,12 @@
  #include "stdio.h"
  #include "stdlib.h"
  #include "unistd.h"
- #include "stdbool.h" 
+ #include "stdbool.h"
+
+// Les include pour traiter le signal
+#include <sys/wait.h>
+#include <newlib/sys/select.h>
+#include <signal.h>
 
  // Include des fonctions et types fondamentaux  
  #include "sys/socket.h"
@@ -10,6 +15,12 @@
 
  // Include des macros
  #include "netinet/in.h"
+
+// fonction qui sera appelé quand le signal SIGCHLD est reçu
+// cette fonction enterine le fils 
+void end_child(){
+    wait(NULL);
+}
 
 
 // Serveur qui se met à l'écoute, reçoit une demande client, 
@@ -24,12 +35,22 @@ int main(void){
     // Création de la structure adresse du serveur (struct sockaddr_in)
     struct sockaddr_in sockaddr_server;
     sockaddr_server.sin_family = AF_INET;
-    sockaddr_server.sin_port = htons(9000);
+    sockaddr_server.sin_port = htons(9002);
     sockaddr_server.sin_addr.s_addr = INADDR_ANY;
 
 
     // Association de la structure d'adresse et du socket d'écoute (bind())
     bind(server_socket, (struct sockaddr*) &sockaddr_server, sizeof(sockaddr_server));
+
+
+    // déclaration d'une structure qui contient les 
+    struct sigaction ac;
+    // affectation des 
+    ac.sa_handler = end_child;
+    ac.sa_flags = SA_RESTART;
+
+    // execution du handler au moment où on reçoit SIGCHLD
+    sigaction(SIGCHLD, &ac, NULL);
 
     while (true) {
         // Attribution du rôle de socket d'écoute à notre socket (listen())
@@ -45,15 +66,14 @@ int main(void){
         int client_socket = accept(server_socket,(struct sockaddr*) &sockaddr_client, &serv_adress_size);
 
         // Envoi d'un message confirmant la connexion au serveur
-        send(client_socket, answer_msg, sizeof(answer_msg), 0);
-
-        // Déclaration et setup de la structure sigaction
+        write(client_socket, answer_msg, sizeof(answer_msg));
         
         switch(fork()) {
             case -1:
                 perror("Fork failed.");
                 exit(1);
             case 0:
+                close(server_socket);
                 char buffer[256] = "This is an answer to the request you sent";
                 // Envoi du résultat de la requête client grâce au socket de service (send())
                 write(client_socket, buffer, 256);
@@ -62,10 +82,10 @@ int main(void){
                 close(client_socket);
                 exit(0);
             default:
-                // Fermeture de la socket de service (close())
-                close(client_socket);
-                printf("Request completed and child process is dead");
         }
+        // Fermeture de la socket de service (close())
+        close(client_socket);
+        printf("Request completed and child process is dead\n");
     }
     
     // Fermeture du socket d'écoute (close())
