@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 
 
@@ -45,7 +46,7 @@ int main(void){
     /*
     fermer la socket    
     */    
-   //close(network_socket);
+   close(network_socket);
 
    return 0;
 }
