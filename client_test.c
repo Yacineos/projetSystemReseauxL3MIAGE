@@ -10,8 +10,12 @@
 #define YACINE inet_addr("152.77.82.209")
 
 struct trajet {
-    char ville_d[30];
-    char ville_a[30];
+    int num_train;
+    char ville_d[100];
+    char ville_a[100];
+    char heure_d[5];
+    char heure_a[5];
+    float prix;
 };
 
 /* Creation de la socket, attribution de son adresse */

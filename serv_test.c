@@ -18,8 +18,12 @@
  #include "netinet/in.h"
 
 struct trajet {
-    char ville_d[30];
-    char ville_a[30];
+    int num_train;
+    char ville_d[100];
+    char ville_a[100];
+    char heure_d[5];
+    char heure_a[5];
+    float prix;
 };
 
 // fonction qui sera appelé quand le signal SIGCHLD est reçu

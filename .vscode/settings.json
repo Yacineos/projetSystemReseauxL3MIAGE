@@ -6,7 +6,9 @@
         "string.h": "c",
         "functional": "c",
         "inet.h": "c",
-        "client_test": "c"
+        "client_test": "c",
+        "*.tcc": "c",
+        "istream": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
