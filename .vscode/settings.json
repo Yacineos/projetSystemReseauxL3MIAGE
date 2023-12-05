@@ -4,7 +4,9 @@
         "select.h": "c",
         "netdb.h": "c",
         "string.h": "c",
-        "functional": "c"
+        "functional": "c",
+        "inet.h": "c",
+        "client_test": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
