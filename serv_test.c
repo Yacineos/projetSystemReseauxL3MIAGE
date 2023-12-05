@@ -134,6 +134,7 @@ struct tableaux server_data_init(FILE* file) {
     return tableaux_villes;
 } 
 
+
 // fonction qui sera appelé quand le signal SIGCHLD est reçu
 // cette fonction enterine le fils 
 void end_child(){
@@ -181,7 +182,7 @@ int signal_setup(){
     return 0;
 }
 
-void server_loop(int server_socket){
+void server_loop(int server_socket, struct tableaux tableaux_ville){
         
     // Message qui signale au client la réussite de la connexion 
     char answer_msg[256] = "You have reached the server";
@@ -218,11 +219,16 @@ void server_loop(int server_socket){
                 close(server_socket);
                 char buffer[256] = "";
                 struct trajet struc_buffer;
-                strcpy(struc_buffer.ville_a, "Lille");
+                strcpy(struc_buffer.ville_a, "Grenoble");
+                if (est_dans_tableau(tableaux_ville.tabVilleArrivee.n, tableaux_ville.tabVilleArrivee.tab, struc_buffer.ville_a)) {
+                        printf("La ville de %s est déjà dans le tableau d'arrivée\n", struc_buffer.ville_a);
+                }
                 memset(buffer, 0, 256);
                 read(client_socket, buffer, sizeof(buffer));
                 strcpy(struc_buffer.ville_d, buffer);
-                printf("Ville de départ : %s\n", struc_buffer.ville_d);
+                if (est_dans_tableau(tableaux_ville.tabVilleDepart.n, tableaux_ville.tabVilleDepart.tab, struc_buffer.ville_d)) {
+                    printf("La ville de %s est déjà dans le tableau de départ\n", struc_buffer.ville_d);
+                }
                 // Envoi du résultat de la requête client grâce au socket de service (write())
                 write(client_socket, &struc_buffer, sizeof(struc_buffer));
 
@@ -260,7 +266,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    server_loop(server_socket);
+    server_loop(server_socket, tableaux_villes);
 
     // Fermeture du socket d'écoute (close())
     close(server_socket);

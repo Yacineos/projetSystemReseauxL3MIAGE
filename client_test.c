@@ -33,7 +33,7 @@ int client_socket_init(int port) {
     server_adress.sin_family = AF_INET;
     server_adress.sin_port = htons(port);
     // Peut être changé avec une macro
-    server_adress.sin_addr.s_addr = YACINE;
+    server_adress.sin_addr.s_addr = INADDR_ANY;
 
     /*   entier qui recevra l'etat de la connexion connect() renvoie 0 s'il réussit, ou -1 s'il échoue, auquel  cas  errno
          contient le code d'erreur. */
