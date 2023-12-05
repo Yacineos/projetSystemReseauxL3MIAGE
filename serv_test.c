@@ -24,7 +24,115 @@ struct trajet {
     char heure_d[5];
     char heure_a[5];
     float prix;
+    char promotion;
 };
+
+// structure tableau qui contient le tableau d'une taille max
+// avec le nombre d'element qui y a dans le tableau 
+struct tableau{
+    int n ; // taille du tableau 
+    char tab[100][100] ; // tableau d'entier
+};
+
+struct tableaux{
+    struct tableau tabVilleDepart;
+    struct tableau tabVilleArrivee;
+};
+
+// Si la valeur est déjà dans le tableau renvoie true, sinon renvoie false
+bool est_dans_tableau(int size, char tab_villes[100][100], char ville[100]) {
+    for (int i = 0; i < size; i++) {
+        if (strcmp(tab_villes[i], ville) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* @param : compteur_vdepart = nombre d'éléments dans le tableau, v_depart = chaîne de caractères à tester, ville_existe = true si la ville est déjà dans le tableau, false sinon,
+            villes_depart = tableau contenant les villes de départ (uniques)
+
+    Cette fonction permet de remplir un tableau de villes de départ. S'il est vide, on y introduit la ville sans tests. Sinon, on teste l'existence au sein du tableau.
+    Si elle n'est pas déjà présente, on l'y introduit. Sinon, on ne fait rien.
+
+    @return : Renvoie le compteur_vdepart qui est le nombre d'éléments dans le tableau (peut avoir changé par rapport à celui passé en paramètres)
+*/ 
+int init_v_depart(int compteur_vdepart, char v_depart[100], bool ville_existe, char villes_depart[100][100]){
+    // On ne peut pas regarder à l'indice 0 car il n'y a rien (segfault)
+    if (compteur_vdepart == 0) {
+        strcpy(villes_depart[compteur_vdepart], v_depart);
+        ville_existe = true;
+        compteur_vdepart++;
+    } else {
+        ville_existe = est_dans_tableau(compteur_vdepart, villes_depart, v_depart);
+    }
+    if (ville_existe == false) {
+        strcpy(villes_depart[compteur_vdepart], v_depart);
+        compteur_vdepart++;
+    }
+    // On retourne la taille du tableau
+    return compteur_vdepart;
+}
+
+/* @param : compteur_varrivee = nombre d'éléments dans le tableau, v_arrivee = chaîne de caractères à tester, ville_existe = true si la ville est déjà dans le tableau, false sinon,
+            villes_arrivee = tableau contenant les villes d'arrivée' (uniques)
+
+    Cette fonction permet de remplir un tableau de villes d'arrivée. S'il est vide, on y introduit la ville sans tests. Sinon, on teste l'existence au sein du tableau.
+    Si elle n'est pas déjà présente, on l'y introduit. Sinon, on ne fait rien.
+
+    @return : Renvoie le compteur_varrivee qui est le nombre d'éléments dans le tableau (peut avoir changé par rapport à celui passé en paramètres)
+*/ 
+int init_v_arrivee(int compteur_varrivee, char v_arrivee[100], bool ville_existe, char villes_arrivee[100][100]) {
+    if (compteur_varrivee == 0) {
+        strcpy(villes_arrivee[compteur_varrivee], v_arrivee);
+        ville_existe = true;
+        compteur_varrivee++;
+    } else {
+        ville_existe = est_dans_tableau(compteur_varrivee, villes_arrivee, v_arrivee);
+    }
+    if (ville_existe == false) {
+        strcpy(villes_arrivee[compteur_varrivee], v_arrivee);
+        compteur_varrivee++;
+    }
+    // On retourne la taille du tableau
+    return compteur_varrivee;
+}
+
+// Initialise 2 tableaux comportant respectivement les villes de départ et d'arrivée
+struct tableaux server_data_init(FILE* file) {
+    char string[1000];
+    char v_depart[100];
+    char v_arrivee[100];
+    char villes_depart[100][100] = { 0 };
+    char villes_arrivee[100][100] = { 0 };
+    int compteur_vdepart = 0;
+    int compteur_varrivee = 0;
+    bool ville_existe = false;
+    // Parcours tout le fichier jusqu'à la fin
+    while(!feof(file)) {
+        fgets(string,sizeof(string), file);
+        sscanf(string, "%*[^;];%127[^;]", v_depart);
+        // Boucle départs
+        compteur_vdepart = init_v_depart(compteur_vdepart, v_depart, ville_existe, villes_depart);
+        // Reset du booléen pour pouvoir analyser les arrivées
+        ville_existe = false;
+        sscanf(string, "%*[^;];%*[^;];%127[^;]", v_arrivee);
+        // Boucle arrivées
+        compteur_varrivee = init_v_arrivee(compteur_varrivee, v_arrivee, ville_existe, villes_arrivee);
+        // Reset du booléen pour pouvoir analyser les départs
+        ville_existe = false;
+    }
+    struct tableau tableau_vdepart = {0};
+    memcpy(tableau_vdepart.tab, villes_depart, sizeof(villes_depart));
+    tableau_vdepart.n = compteur_vdepart;
+    struct tableau tableau_varrivee = {0};
+    memcpy(tableau_varrivee.tab, villes_arrivee, sizeof(villes_arrivee));
+    tableau_varrivee.n = compteur_varrivee;
+    struct tableaux tableaux_villes;
+    tableaux_villes.tabVilleArrivee = tableau_varrivee;
+    tableaux_villes.tabVilleDepart = tableau_vdepart;
+    return tableaux_villes;
+} 
 
 // fonction qui sera appelé quand le signal SIGCHLD est reçu
 // cette fonction enterine le fils 
@@ -115,7 +223,7 @@ void server_loop(int server_socket){
                 read(client_socket, buffer, sizeof(buffer));
                 strcpy(struc_buffer.ville_d, buffer);
                 printf("Ville de départ : %s\n", struc_buffer.ville_d);
-                // Envoi du résultat de la requête client grâce au socket de service (send())
+                // Envoi du résultat de la requête client grâce au socket de service (write())
                 write(client_socket, &struc_buffer, sizeof(struc_buffer));
 
                 // Fermeture de la socket de service (close())
@@ -141,6 +249,9 @@ int main(int argc, char *argv[]) {
         printf("Wrong argument value : An integer between 9000 and 9010 is expected\n");
         exit(1);
     }
+    FILE* trajets = fopen("trajets.txt", "r");
+    // Initialisation d'une structure contenant le tableau de villes d'arrivée ainsi que celui des villes de départ avec le nombre de valeurs qu'ils contiennent
+    struct tableaux tableaux_villes = server_data_init(trajets);
 
     int server_socket = server_socket_init(atoi(argv[1]));
 
@@ -153,7 +264,8 @@ int main(int argc, char *argv[]) {
 
     // Fermeture du socket d'écoute (close())
     close(server_socket);
-
+    // Fermeture du fichier
+    fclose(trajets);
     // Fin du programme serveur 
     return 0;
 }

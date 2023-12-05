@@ -11,7 +11,7 @@
 86174;Montelimar;Valence;6:30;6:55;9.80;
 86175;Montelimar;Valence;7:10;7:30;9.80;SUPPL
 86177;Montelimar;Valence;7:30;7:55;9.80;
-86178;Montelimar;Valence;8:00;8:25;9.80;
+86178;Montelimar;Valenciennes;8:00;8:25;9.80;
 86179;Montelimar;Valence;8:30;8:55;9.80;REDUC
 9862;Valence;Paris Gare de Lyon;15:15;17:49;109.50;REDUC
 6194;Valence;Paris Gare de Lyon;16:15;19:15;92.00;

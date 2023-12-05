@@ -16,6 +16,7 @@ struct trajet {
     char heure_d[5];
     char heure_a[5];
     float prix;
+    char promotion;
 };
 
 /* Creation de la socket, attribution de son adresse */
@@ -66,6 +67,7 @@ int communication_to_server(int socket, char *request){
 
     return 0;
 }
+
 
 
 /*
