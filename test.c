@@ -48,23 +48,35 @@ int main() {
         }
         ville_existe = false;
 
-        // sscanf(string, "%*[^;];%*[^;];%127[^;]", v_arrivee);
-        // ville_existe = false;
-        // if (sizeof(villes_arrivee) != 0) {
-        //     for (int i = 0; i < sizeof(villes_arrivee)/sizeof(villes_arrivee[0]); i++) {
-        //     if (strcmp(villes_arrivee[i], v_arrivee)) {
-        //         ville_existe = true;
-        //         break;
-        //     }
-        // }
-        // }
-        // if (ville_existe = false) {
-        //     villes_arrivee[sizeof(villes_arrivee)/sizeof(villes_arrivee[0]) + 1] = v_arrivee;
-        // }
-        // printf("Arrivée : %s\n", v_arrivee);
+        sscanf(string, "%*[^;];%*[^;];%127[^;]", v_arrivee);
+        ville_existe = false;
+        if (compteur_varrivee == 0) {
+            strcpy(villes_arrivee[compteur_varrivee], v_arrivee);
+            ville_existe = true;
+            compteur_varrivee++;
+        } else {
+            // for (int i = 0; i < compteur_vdepart; i++) {
+            //     if (strcmp(villes_depart[i], v_depart)) {
+            //         ville_existe = true;
+            //         break;
+            //     }
+            // }
+            int i = 0;
+            while (i < compteur_varrivee && !(ville_existe)) {
+                if (strcmp(villes_arrivee[i], v_arrivee) == 0) {
+                    ville_existe = true;
+                }
+                i++;
+            }
+        }
+        if (ville_existe == false) {
+            strcpy(villes_arrivee[compteur_varrivee], v_arrivee);
+            compteur_varrivee++;
+        }
+        ville_existe = false;
     }
-    for (int i = 0; i < compteur_vdepart; i++) {
-        printf("%s\n", villes_depart[i]);
+    for (int i = 0; i < compteur_varrivee; i++) {
+        printf("%s\n", villes_arrivee[i]);
     }
     // printf("\n");
     fclose(trajets);
