@@ -8,7 +8,7 @@
 #include <string.h>
 
 /* Creation de la socket, attribution de son adresse */
-int client_socket_init(int port) {
+int socket_init(int port) {
     //creation de la socket
     int network_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (network_socket == -1) {
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
         printf("Wrong argument value : Second argument must be an integer between 9000 and 9010 is expected\n");
         exit(1);
     }
-    int socket = client_socket_init(atoi(argv[1]));
+    int socket = socket_init(atoi(argv[1]));
     if (communication_to_server(socket, argv[2]) !=0) {
         printf("Erreur de communication avec le serveur.");
         exit(1);
