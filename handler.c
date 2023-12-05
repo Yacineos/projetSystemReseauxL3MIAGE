@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <newlib/sys/select.h>
+#include <signal.h>
 
 // fonction qui sera appelé quand le signal SIGCHLD est reçu
 // cette fonction enterine le fils 
@@ -12,7 +13,8 @@ void end_child(){
     wait(NULL);
 }
 
-/* création de n processus fils 
+/* Programme de test pour tester Le handler
+*  création de n processus fils 
 *  et redirection du signal sigchild qui est envoyer par le fils au père quand il est mort
 *  par redirection on veut dire execution d'une fonction 
 *  cette fonction va tout simplement faire un wait() 
