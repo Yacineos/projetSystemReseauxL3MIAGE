@@ -182,6 +182,59 @@ int signal_setup(){
     return 0;
 }
 
+// int verif_des_villes(struct trajet struc_buffer, struct tableaux tableaux_villes, int socket) {
+//     char buffer[256] = "";
+//     memset(buffer, 0, 256);
+//     read(socket, buffer, sizeof(buffer));
+//     strcpy(struc_buffer.ville_d, buffer);
+//     for (int i = 0; i < tableaux_villes.tabVilleDepart.n; i++) {
+//         printf("Départs : %s\n", tableaux_villes.tabVilleDepart.tab[i]);
+//     }
+//     for (int i = 0; i < tableaux_villes.tabVilleArrivee.n; i++) {
+//         printf("Arrivées : %s\n", tableaux_villes.tabVilleArrivee.tab[i]);
+//     }
+//     if (!est_dans_tableau(tableaux_villes.tabVilleDepart.n, tableaux_villes.tabVilleDepart.tab, struc_buffer.ville_d)) {
+//         strcpy(buffer, "La ville de départ n'existe pas.\n");
+//         write(socket, buffer, sizeof(buffer));
+//     } else {
+//         strcpy(buffer, " ");
+//         write(socket, buffer, sizeof(buffer)); 
+//     }
+//     memset(buffer, 0, 256);
+//     read(socket, buffer, 256);
+//     strcpy(struc_buffer.ville_a, buffer);
+//     if (!est_dans_tableau(tableaux_villes.tabVilleArrivee.n, tableaux_villes.tabVilleArrivee.tab, struc_buffer.ville_a)) {
+//         strcpy(buffer, "La ville d'arrivée n'existe pas.\n");
+//         write(socket, buffer, sizeof(buffer));
+//     } else {
+//         strcpy(buffer, " ");
+//         write(socket, buffer, sizeof(buffer));        
+//     }
+//     return 0;
+// }
+
+int verif_des_villes(char ville_struc[256], struct tableau tableau_villes, int socket) {
+    // Initialisation des variables de la fonction
+    char buffer[256] = "";
+    memset(buffer, 0, 256);
+    // Lecture de la ville reçue
+    read(socket, buffer, 256);
+    // Si la ville n'est pas dans le tableau, on envoie au client le code d'échec 1 et on renvoie 1, auquel cas on bouclera sur cette même méthode 
+    if (!est_dans_tableau(tableaux_villes.tabVilleDepart.n, tableaux_villes.tabVilleDepart.tab, struc_buffer.ville_d)) {
+        strcpy(buffer, "1");
+        write(socket, buffer, sizeof(buffer));
+        return 1;
+    } else { // Si on trouve la ville dans le tableau des villes concerné
+        // Copie de la ville dans la structure trajet
+        strcpy(ville_struc, buffer);
+        // Envoi du code de retour de succès de la fonction
+        strcpy(buffer, "0");
+        write(socket, buffer, sizeof(buffer)); 
+    }
+    return 0;
+}
+
+
 void server_loop(int server_socket, struct tableaux tableaux_ville){
         
     // Message qui signale au client la réussite de la connexion 
@@ -219,16 +272,7 @@ void server_loop(int server_socket, struct tableaux tableaux_ville){
                 close(server_socket);
                 char buffer[256] = "";
                 struct trajet struc_buffer;
-                strcpy(struc_buffer.ville_a, "Grenoble");
-                if (est_dans_tableau(tableaux_ville.tabVilleArrivee.n, tableaux_ville.tabVilleArrivee.tab, struc_buffer.ville_a)) {
-                        printf("La ville de %s est déjà dans le tableau d'arrivée\n", struc_buffer.ville_a);
-                }
-                memset(buffer, 0, 256);
-                read(client_socket, buffer, sizeof(buffer));
-                strcpy(struc_buffer.ville_d, buffer);
-                if (est_dans_tableau(tableaux_ville.tabVilleDepart.n, tableaux_ville.tabVilleDepart.tab, struc_buffer.ville_d)) {
-                    printf("La ville de %s est déjà dans le tableau de départ\n", struc_buffer.ville_d);
-                }
+                verif_des_villes(struc_buffer, tableaux_ville, client_socket);
                 // Envoi du résultat de la requête client grâce au socket de service (write())
                 write(client_socket, &struc_buffer, sizeof(struc_buffer));
 

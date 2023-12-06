@@ -55,11 +55,23 @@ int communication_to_server(int socket, char *request){
 
     // Reception des données du serveur
     memset(buffer, 0, 256);
-    read(socket, buffer, sizeof(buffer));
+    read(socket, buffer, 256);
     printf("le serveur renvoie : %s\n", buffer);
-    memset(buffer, 0, 256);
+    // Envoi de la ville de départ
     strcpy(buffer, request);
     write(socket, buffer, sizeof(buffer));
+    memset(buffer, 0, 256);
+    // Récupération de la vérif
+    read(socket, buffer, 256);
+    printf("%s\n", buffer);
+    // Envoi de la ville d'arrivée
+    strcpy(buffer, request);
+    write(socket, buffer, sizeof(buffer));
+    memset(buffer, 0, 256);
+    read(socket, buffer, 256);
+    printf("%s\n", buffer);
+
+    
     //
     read(socket, &struc_buffer, sizeof(struc_buffer));
     printf("Ville de départ : %s\n", struc_buffer.ville_d);
