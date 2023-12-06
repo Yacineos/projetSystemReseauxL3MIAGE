@@ -61,5 +61,177 @@ int ville_existe(int socket, char destination[MAX_SIZE_STRING]){
         memset(buffer, 0, MAX_SIZE_STRING);
         read(socket, buffer , MAX_SIZE_STRING);
     } while(strcmp(buffer,"1") == 0);
+    return 0;
+}
+
+/*
+    fonction qui envoie n trajet de type trajet vers le client 
+
+    @param struct trajet* tableau_de_trajet
+    @param n le nombre de trajet
+    @param socket_service : int 
+
+
+    @result int = 1 false , int = 0 success 
+    la fonction renvoie status d'erreur dès l'erreur sur un seul envoie 
+*/
+int envoie_n_trajets(struct trajet *tableau_de_trajet , int n , int socket_service){
+    
+    for(int i = 0 ; i < n ; i++){
+        if(envoie_trajet(&tableau_de_trajet[i],socket_service) != 0){
+            printf("erreur dans l'envoie du trajet : %d",i+1);
+            return 1;
+        }
+    }
+    return 0 ;
+}
+
+/*
+    fonction qui envoie un trajet 
+    champs par champs 
+    vers un client en utilisant la socket de service 
+
+    @param trajet_train : pointeur vers struct trajet 
+    @param socket_service : i
+
+    @return void
+*/
+
+
+int envoie_trajet(struct trajet *trajet_train , int socket_service){
+    char buffer[MAX_SIZE_STRING];
+    // envoie du numéro de train 
+    if(write(socket_service, &trajet_train->num_train, sizeof(int)) == -1){
+        perror("write envoie_trajet");
+        return 1;
+    }
+    memset(buffer,0,MAX_SIZE_STRING);
+    strcpy(buffer,trajet_train->ville_d);
+    // envoie de la ville de départ 
+    if(write(socket_service, &buffer, MAX_SIZE_STRING) == -1){
+        perror("write envoie_trajet");
+        return 1;
+    }
+    memset(buffer,0,MAX_SIZE_STRING);
+    strcpy(buffer,trajet_train->ville_a);
+    // envoie de la ville d'arrivée
+    if(write(socket_service, &buffer, MAX_SIZE_STRING) == -1){
+        perror("write envoie_trajet");
+        return 1;
+    }
+    memset(buffer,0,MAX_SIZE_STRING);
+    strcpy(buffer,trajet_train->heure_d);
+    printf("%s\n",trajet_train->heure_d);
+    // envoie de l'heure de départ 
+    if(write(socket_service, &buffer,MAX_SIZE_STRING) == -1){
+        perror("write envoie_trajet");
+        return 1;        
+    }
+    printf("%s",buffer);
+    memset(buffer,0,MAX_SIZE_STRING);
+    strcpy(buffer,trajet_train->heure_a);
+    // envoie de l'heure d'arrivée 
+    if(write(socket_service, &buffer,MAX_SIZE_STRING) == -1){
+        perror("write envoie_trajet");
+        return 1;
+    }
+
+    // envoie du prix 
+    if(write(socket_service, &trajet_train->prix , sizeof(float)) == -1){
+        perror("write envoie_trajet");
+        return 1;
+    }
+
+    return 0;
+}
+
+/*
+ * Fonction qui affiche un trajet reçu en paramètre 
+ *
+ */
+
+void affiche_trajet(struct trajet struc_trajet){
+    printf("num: %d | villDep: %s | villArr: %s | heureDep: %s | heureArr: %s | prix: %f \n",struc_trajet.num_train , struc_trajet.ville_d , struc_trajet.ville_a , struc_trajet.heure_d , struc_trajet.heure_a , struc_trajet.prix );
+}
+
+/*
+    fonction qui lit un les champs d'un trajet envoyé par le serveur champs par champs et affecte les valeur au trajet passé en paramètre  
+
+    @param socket : int
+    
+    @return int 0 success , 1 for error 
+*/
+int lecture_trajet(struct trajet *struc_buffer , int socket){
+     
+    char buffer[MAX_SIZE_STRING] = "";
+
+    // lecture du numéro de train
+    if(read(socket,&struc_buffer->num_train, sizeof(int)) == -1){
+        perror("erreur lecture trajet");
+        return 1 ;
+    }
+
+    // lecture ville départ 
+    memset(buffer, 0, MAX_SIZE_STRING);
+    if(read(socket, buffer,MAX_SIZE_STRING) == -1 ){
+        perror("erreur lecture trajet");
+        return 1 ;
+    }
+    strcpy(struc_buffer->ville_d,buffer);
+    // lecture ville arrivée
+    memset(buffer, 0, MAX_SIZE_STRING);
+    
+    if(read(socket, buffer, sizeof(buffer)) == -1){
+        perror("erreur lecture trajet");
+        return 1 ;        
+    }
+    strcpy(struc_buffer->ville_a,buffer);
+    
+    // lecture heure départ 
+    memset(buffer, 0, MAX_SIZE_STRING);
+    if(read(socket, buffer, MAX_SIZE_STRING) == -1){
+        perror("erreur lecture trajet");
+        return 1 ;
+    }
+    strcpy(struc_buffer->heure_d,buffer);
+    
+    // lecture heure arrivée 
+    memset(buffer, 0, MAX_SIZE_STRING);
+    if(read(socket, buffer,MAX_SIZE_STRING) == -1 ){
+        perror("erreur lecture trajet");
+        return 1 ;
+    }
+    strcpy(struc_buffer->heure_a,buffer);
+    // lecture prix
+
+    if(read(socket, &(struc_buffer->prix) , sizeof(float)) == -1){
+        perror("erreur lecture trajet");
+        return 1 ;
+    }
+
+    // success
+    return 0;
+    
+    }
+
+/* Fonction qui lit n trajet du serveur et remplie un tableau de trajets 
+ * 
+ * @param struct trajet* à remplir à partir des données lus
+ * @param n taille de la liste de trajet 
+ * 
+ * @return int 1 false , 0 true 
+ * 
+ * exemple d'appel : 
+ * struct trajet struc_buffer[3];
+ * lecture_n_trajet(struc_buffer,3,socket);
+ */
+int lecture_n_trajet(struct trajet *list_trajet_a_remplir, int n , int socket ){
+    for(int i = 0 ; i < n ; i++){
+        if(lecture_trajet(&list_trajet_a_remplir[i] , socket ) != 0){
+            printf("erreur lecture trajet : %d\n",i+1);
+            return 1 ;
+        }
+    }
+    return 0 ;
 }
 

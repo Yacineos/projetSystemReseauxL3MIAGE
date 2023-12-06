@@ -8,6 +8,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+
 /* Creation de la socket, attribution de son adresse */
 int client_socket_init(int port) {
     //creation de la socket

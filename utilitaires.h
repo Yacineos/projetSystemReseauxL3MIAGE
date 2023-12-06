@@ -40,8 +40,8 @@ struct trajet {
     int num_train;
     char ville_d[MAX_SIZE_STRING];
     char ville_a[MAX_SIZE_STRING];
-    char heure_d[5];
-    char heure_a[5];
+    char heure_d[MAX_SIZE_STRING];
+    char heure_a[MAX_SIZE_STRING];
     float prix;
 };
 
@@ -74,5 +74,13 @@ void end_child();
 int verif_des_villes(char ville_struc[MAX_SIZE_STRING], struct tableau tableau_villes, int socket);
 
 int ville_existe(int socket, char destination[MAX_SIZE_STRING]);
+
+int envoie_trajet(struct trajet *trajet_train , int socket_service);
+
+void affiche_trajet(struct trajet struc_trajet);
+
+int lecture_trajet(struct trajet *struc_buffer , int socket);
+
+int lecture_n_trajet(struct trajet *list_trajet_a_remplir, int n , int socket );
 
 #endif // UTILITAIRES_H

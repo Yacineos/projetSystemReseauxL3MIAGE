@@ -180,6 +180,15 @@ void server_loop(int server_socket, struct tableaux tableaux_ville) {
                 while (success == 1) {
                     success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket); 
                 }
+                memset(buffer, 0, MAX_SIZE_STRING);
+                strcpy(buffer, "10:30");
+                strcpy(struc_buffer.heure_d, buffer);
+                memset(buffer, 0, MAX_SIZE_STRING);
+                strcpy(buffer, "12:30");
+                strcpy(struc_buffer.heure_a, buffer);
+                struc_buffer.prix = 10.9;
+
+                envoie_trajet(&struc_buffer , client_socket);
                 // Envoi du résultat de la requête client grâce au socket de service (write())
                 // write(client_socket, &struc_buffer, sizeof(struc_buffer));
 
@@ -239,5 +248,8 @@ int communication_to_server(int socket, char *request){
     strcpy(buffer, "arrivée");
     // Saisie, envoi et vérification de la ville d'arrivée
     ville_existe(socket, buffer);
+    lecture_trajet(&struc_buffer, socket);
+    affiche_trajet(struc_buffer);
+
     return 0;
 }
