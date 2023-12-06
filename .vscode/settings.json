@@ -8,7 +8,11 @@
         "inet.h": "c",
         "client_test": "c",
         "*.tcc": "c",
-        "istream": "c"
+        "istream": "c",
+        "socket.h": "c",
+        "unistd.h": "c",
+        "stdio.h": "c",
+        "utilitaires.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

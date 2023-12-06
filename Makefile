@@ -9,10 +9,15 @@ multi_client:
 	gcc multi_client.c -o multi_client_exec
 
 client_test:
-	gcc client_test.c -o client_test_exec
+	gcc -c utilitaires.c -o utilitaires.o
+	gcc -c init.c -o init.o
+	gcc -c client_test.c -o client_test.o
+	gcc utilitaires.o init.o client_test.o -o client_test_exec
 
 serveur_test:
-	gcc serv_test.c -o serveur_test_exec
+	gcc -c serv_test.c -o serv_test.o
+	gcc utilitaires.o init.o serv_test.o -o serveur_test_exec
 
 clean:
 	rm -f *_exec
+	rm -f *.o
