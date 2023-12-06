@@ -28,11 +28,13 @@ int init_v_arrivee(int compteur_varrivee, char v_arrivee[MAX_SIZE_STRING], bool 
 
 struct tableaux server_data_init(FILE* file);
 
+int recherche_trajet(struct trajet *trajet, FILE* fichier_trajets);
+
 int server_socket_init(int port);
 
 int signal_init();
 
-void server_loop(int server_socket, struct tableaux tableaux_ville);
+void server_loop(int server_socket, struct tableaux tableaux_ville, FILE* fichier_trajets);
 
 // Fonctions côté client
 int client_socket_init(int port);

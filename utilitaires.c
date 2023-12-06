@@ -121,13 +121,11 @@ int envoie_trajet(struct trajet *trajet_train , int socket_service){
     }
     memset(buffer,0,MAX_SIZE_STRING);
     strcpy(buffer,trajet_train->heure_d);
-    printf("%s\n",trajet_train->heure_d);
     // envoie de l'heure de départ 
     if(write(socket_service, &buffer,MAX_SIZE_STRING) == -1){
         perror("write envoie_trajet");
         return 1;        
     }
-    printf("%s",buffer);
     memset(buffer,0,MAX_SIZE_STRING);
     strcpy(buffer,trajet_train->heure_a);
     // envoie de l'heure d'arrivée 
@@ -234,4 +232,67 @@ int lecture_n_trajet(struct trajet *list_trajet_a_remplir, int n , int socket ){
     }
     return 0 ;
 }
+
+//fonction pour suprimer un char d'un char[256]
+void supprimerCaractere(char chaine[], char caractere) {
+    int i, j;
+    char copie_chaine[MAX_SIZE_STRING];
+
+    strcpy(copie_chaine, chaine); // Copie de la chaîne d'origine
+
+    for (i = 0, j = 0; i < strlen(copie_chaine); ++i) {
+        if (copie_chaine[i] != caractere) {
+            chaine[j++] = copie_chaine[i];
+        }
+    }
+}
+
+//fonction qui compare les deux horaires
+int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve[MAX_SIZE_STRING]){
+    char copie_h_depart_demande[MAX_SIZE_STRING];
+    strcpy(copie_h_depart_demande, h_depart_demande); // Copie de la chaîne d'origine
+
+    supprimerCaractere(copie_h_depart_demande, ':');
+    int h_dep_dem = atoi(copie_h_depart_demande);
+
+    char copie_h_depart_trouve[MAX_SIZE_STRING];
+    strcpy(copie_h_depart_trouve, h_depart_trouve);
+    supprimerCaractere(copie_h_depart_trouve, ':');
+    int h_dep_trv = atoi(copie_h_depart_trouve);
+
+    int response;
+    if(h_dep_trv >= h_dep_dem){
+        return 0;
+    }
+    return 1;
+}
+
+float calcule_prix(char prix_trajet[MAX_SIZE_STRING], char tarif[MAX_SIZE_STRING]) {
+    float prix;
+    prix = atof(prix_trajet);
+
+    if (strcmp(tarif, "REDUC") == 0) {
+        prix = prix - ((20 * prix) / 100);
+    } else if (strcmp(tarif, "SUPPL") == 0) {
+        prix = prix + ((10 * prix) / 100);
+    }
+
+    return prix;
+}
+
+
+/* Fonction qui lit un choix utilisateur puis lit un fichier ligne par ligne et recherche un trajet dont la ville de départ match avec celle demandée. Si match, alors on regarde
+si la ville d'arrivée match aussi. Si non, on avance. Si oui, selon le choix utilisateur on fait :
+    - cas 1 :
+        > création d'une variable horaire_demande à laquelle on affecte l'horaire de départ de la structure passée en paramètre 
+        > comparaison de l'horaire de départ trouvé avec l'horaire_demande
+            >> Si horaire_demande < horaire_trouve, alors on compare avec l'horaire de départ de la structure :
+                >>> Si horaire_trouve < horaire de la structure, alors on le remplace, sinon on ne fait rien
+            >> Sinon on ne fait rien
+    - cas 2 :
+    - cas 3 : 
+*/
+// int exec_recherche() {
+//     return 0;
+// }
 

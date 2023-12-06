@@ -87,6 +87,56 @@ struct tableaux server_data_init(FILE* file) {
     return tableaux_villes;
 }
 
+int recherche_trajet(struct trajet *trajet, FILE* fichier_trajets) {
+    char horaire_demande[MAX_SIZE_STRING];
+    char string[MAX_SIZE_STRING];
+    char donnee_trouvee[MAX_SIZE_STRING];
+    char reduction[MAX_SIZE_STRING];
+    bool result_found = false;
+    strcpy(horaire_demande, trajet->heure_d);
+    rewind(fichier_trajets);
+    while(!feof(fichier_trajets)) {
+        memset(donnee_trouvee, 0, MAX_SIZE_STRING);
+        fgets(string, MAX_SIZE_STRING, fichier_trajets);
+        sscanf(string, "%*[^;];%127[^;]", donnee_trouvee);
+            // Vérification de la ville de départ OK
+        if (strcmp(donnee_trouvee, trajet->ville_d) == 0) {
+            memset(donnee_trouvee, 0, MAX_SIZE_STRING);
+            sscanf(string, "%*[^;];%*[^;];%127[^;]", donnee_trouvee);
+            // Vérification de la ville d'arrivée OK
+            if (strcmp(donnee_trouvee, trajet->ville_a) == 0) {
+                memset(donnee_trouvee, 0, MAX_SIZE_STRING);
+                sscanf(string, "%*[^;];%*[^;];%*[^;];%127[^;]", donnee_trouvee);
+                // Vérif horaire OK
+                if ((compare_horaire(horaire_demande, donnee_trouvee) == 0 && !result_found) || (compare_horaire(horaire_demande, donnee_trouvee) == 0 && compare_horaire(donnee_trouvee, trajet->heure_d) == 0 && result_found)) {
+                    strcpy(trajet->heure_d, donnee_trouvee);
+                    memset(donnee_trouvee, 0, MAX_SIZE_STRING);
+                    sscanf(string, "%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", donnee_trouvee);
+                    strcpy(trajet->heure_a, donnee_trouvee);
+                    memset(donnee_trouvee, 0, MAX_SIZE_STRING);
+                    sscanf(string, "%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", donnee_trouvee);
+                    if (sscanf(string, "%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", reduction) == 1) {
+                        donnee_trouvee[strcspn(donnee_trouvee, "\n")] = 0;
+                        reduction[strcspn(reduction, "\n")] = 0;
+                        trajet->prix = calcule_prix(donnee_trouvee, reduction);
+                    } else {
+                        memset(reduction, 0, MAX_SIZE_STRING);
+                        trajet->prix = calcule_prix(donnee_trouvee, reduction);
+                    }
+                    memset(donnee_trouvee, 0, MAX_SIZE_STRING);
+                    sscanf(string, "%127[^;]", donnee_trouvee);
+                    trajet->num_train = atoi(donnee_trouvee);
+                    result_found = true;
+                }          
+            }
+        }
+    }
+    if (result_found) {
+        return 0;
+    }
+    return 1;
+}
+
 int server_socket_init(int port){
 
     // Création du socket d'écoute (socket())
@@ -135,7 +185,7 @@ int signal_init(){
 
 // Boucle d'exécution du serveur stoppable avec Ctrl + C
 // [A REFACTORISER AU MIEUX...]
-void server_loop(int server_socket, struct tableaux tableaux_ville) {
+void server_loop(int server_socket, struct tableaux tableaux_ville, FILE* file) {
         
     // Message qui signale au client la réussite de la connexion 
     char answer_msg[MAX_SIZE_STRING] = "You have reached the server";
@@ -181,12 +231,10 @@ void server_loop(int server_socket, struct tableaux tableaux_ville) {
                     success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket); 
                 }
                 memset(buffer, 0, MAX_SIZE_STRING);
-                strcpy(buffer, "10:30");
+                strcpy(buffer, "6:00");
                 strcpy(struc_buffer.heure_d, buffer);
-                memset(buffer, 0, MAX_SIZE_STRING);
-                strcpy(buffer, "12:30");
-                strcpy(struc_buffer.heure_a, buffer);
-                struc_buffer.prix = 10.9;
+                recherche_trajet(&struc_buffer, file);
+                affiche_trajet(struc_buffer);
 
                 envoie_trajet(&struc_buffer , client_socket);
                 // Envoi du résultat de la requête client grâce au socket de service (write())

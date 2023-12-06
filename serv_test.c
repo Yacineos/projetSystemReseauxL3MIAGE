@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    server_loop(server_socket, tableaux_villes);
+    server_loop(server_socket, tableaux_villes, trajets);
 
     // Fermeture du socket d'écoute (close())
     close(server_socket);

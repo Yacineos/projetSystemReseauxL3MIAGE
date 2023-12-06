@@ -83,4 +83,10 @@ int lecture_trajet(struct trajet *struc_buffer , int socket);
 
 int lecture_n_trajet(struct trajet *list_trajet_a_remplir, int n , int socket );
 
+void supprimerCaractere(char chaine[], char caractere);
+
+int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve[MAX_SIZE_STRING]);
+
+float calcule_prix(char prix_trajet[MAX_SIZE_STRING], char tarif[MAX_SIZE_STRING]);
+
 #endif // UTILITAIRES_H
