@@ -1,11 +1,11 @@
 /* Fichier qui contient le programme principal du serveur. Celui-ci ne se charge que d'exécuter les différents protocoles et fonctions qui ont été définis dans d'autres fichiers attitrés */
 
 // Les include génériques
- #include "stdio.h"
- #include "stdlib.h"
- #include "unistd.h"
- #include "stdbool.h"
- #include "string.h"
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <stdbool.h>
+ #include <string.h>
 
 // Les include pour traiter le signal
 
@@ -15,11 +15,11 @@
 #include <signal.h>
 
  // Include des fonctions et types fondamentaux  
- #include "sys/socket.h"
- #include "sys/types.h"
+ #include <sys/socket.h>
+ #include <sys/types.h>
 
  // Include des macros
- #include "netinet/in.h"
+ #include <netinet/in.h>
 
 // fonction qui sera appelé quand le signal SIGCHLD est reçu
 // cette fonction enterine le fils 
@@ -115,6 +115,7 @@ void server_loop(int server_socket){
                 close(client_socket);
                 exit(0);
             default:
+                break;
         }
         // Fermeture de la socket de service (close())
         close(client_socket);

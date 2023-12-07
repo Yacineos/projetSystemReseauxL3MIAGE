@@ -1,4 +1,4 @@
-/* Fichier qui contient la déclaration de toutes les fonctions d'initialisation du serveur, du client ainsi que de leurs protocoles. 
+/* Fichier qui contient la déclaration de toutes les fonctions d'initialisation du serveur, du client ainsi que de leurs protocoles.
  * Contient également les includes appropriés pour l'utilisation des fonctions qui en découlent.
  */
 
@@ -32,23 +32,15 @@ int init_v_depart(int compteur_vdepart, char v_depart[MAX_SIZE_STRING], bool vil
 
 int init_v_arrivee(int compteur_varrivee, char v_arrivee[MAX_SIZE_STRING], bool ville_existe, char villes_arrivee[100][MAX_SIZE_STRING]);
 
-struct tableaux server_data_init(FILE* file);
-
-int recherche_trajet(struct trajet *trajet, FILE* fichier_trajets);
-
-int recherche_n_trajets_selon_plage(struct trajet trajet, FILE *fichier_trajets, struct trajet *trajets_trouves);
-
-int recherche_tous_trajets_selon_itineraire(struct trajet trajet, FILE *fichier_trajets, struct trajet *trajets_trouves);
-
-int select_trajet_le_moins_cher(struct trajet *trajets_trouves, int array_size);
+struct tableaux server_data_init(FILE *file);
 
 int server_socket_init(int port);
 
 int signal_init();
 
-void server_loop(int server_socket, struct tableaux tableaux_ville, FILE* fichier_trajets);
+void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *fichier_trajets);
 
 // Fonctions côté client
 int client_socket_init(int port);
 
-int communication_to_server(int socket, char *request);
+int communication_to_server(int socket);

@@ -1,7 +1,6 @@
-/* 
-* Fichier qui contient la définition de toutes les fonctions d'initialisation du serveur, du client ainsi que de leurs protocoles
-*/
-
+/*
+ * Fichier qui contient la définition de toutes les fonctions d'initialisation du serveur, du client ainsi que de leurs protocoles
+ */
 
 #include <stdio.h>
 #include "init.h"
@@ -104,132 +103,6 @@ struct tableaux server_data_init(FILE *file)
     return tableaux_villes;
 }
 
-int recherche_trajet(struct trajet *trajet, FILE *fichier_trajets)
-{
-    // Variable qui stocke l'horaire demandé par l'utilisateur
-    char horaire_demande[MAX_SIZE_STRING];
-    strcpy(horaire_demande, trajet->heure_d);
-    // Variable qui stocke une par une chaque ligne du fichier lue par fgets
-    char string[MAX_SIZE_STRING];
-    // Variable qui stocke les données parsées par sscanf une par une
-    char donnee_trouvee[MAX_SIZE_STRING];
-    // Variable qui stocke, une réduction s'il y en a, sinon sera vide
-    char reduction[MAX_SIZE_STRING];
-    // Variable qui indique si nous avons trouvé un train optimal ou si aucun train n'a été trouvé
-    bool result_found = false;
-    // Le fichier a déjà été parcouru à l'initialisation du serveur, on remet donc le curseur au début du fichier
-    rewind(fichier_trajets);
-    while (!feof(fichier_trajets))
-    {
-        // Lecture du fichier ligne par ligne
-        fgets(string, MAX_SIZE_STRING, fichier_trajets);
-        // Vérification de la ville de départ
-        if (match_depart(string, donnee_trouvee, trajet) == 0)
-        {
-            // Vérification de la ville d'arrivée
-            if (match_arrivee(string, donnee_trouvee, trajet) == 0)
-            {
-                // Vérif que l'horaire correspond
-                if (match_horaire(horaire_demande, string, donnee_trouvee, result_found, trajet) == 0)
-                {
-                    apply_price(string, reduction, donnee_trouvee, trajet);
-                    get_train_number(string, donnee_trouvee, trajet);
-                    result_found = true;
-                }
-            }
-        }
-    }
-    // Codes de retour en fonction de si on trouve un train. Interprété par le client
-    if (result_found)
-    {
-        return 0;
-    }
-    return 1;
-}
-
-int recherche_n_trajets_selon_plage(struct trajet trajet, FILE *fichier_trajets, struct trajet *trajets_trouves)
-{
-    char string[MAX_SIZE_STRING];
-    char donnee_trouvee[MAX_SIZE_STRING];
-    char reduction[MAX_SIZE_STRING];
-    int array_size = 0;
-    rewind(fichier_trajets);
-    while (!feof(fichier_trajets))
-    {
-        struct trajet trajet_a_tester;
-        fgets(string, MAX_SIZE_STRING, fichier_trajets);
-        if (match_depart(string, donnee_trouvee, &trajet) == 0)
-        {
-            strcpy(trajet_a_tester.ville_d, trajet.ville_d);
-            if (match_arrivee(string, donnee_trouvee, &trajet) == 0)
-            {
-                strcpy(trajet_a_tester.ville_a, trajet.ville_a);
-                if (match_plage_horaire(trajet, string, donnee_trouvee, &trajet_a_tester) == 0)
-                {
-                    apply_price(string, reduction, donnee_trouvee, &trajet_a_tester);
-                    get_train_number(string, donnee_trouvee, &trajet_a_tester);
-                    trajets_trouves[array_size] = trajet_a_tester;
-                    array_size++;
-                }
-            }
-        }
-    }
-    return array_size;
-}
-
-int recherche_tous_trajets_selon_itineraire(struct trajet trajet, FILE *fichier_trajets, struct trajet *trajets_trouves)
-{
-    char string[MAX_SIZE_STRING];
-    char donnee_trouvee[MAX_SIZE_STRING];
-    char reduction[MAX_SIZE_STRING];
-    int array_size = 0;
-    rewind(fichier_trajets);
-    while (!feof(fichier_trajets))
-    {
-        struct trajet trajet_a_tester;
-        fgets(string, MAX_SIZE_STRING, fichier_trajets);
-        if (match_depart(string, donnee_trouvee, &trajet) == 0)
-        {
-            strcpy(trajet_a_tester.ville_d, trajet.ville_d);
-            if (match_arrivee(string, donnee_trouvee, &trajet) == 0)
-            {
-                strcpy(trajet_a_tester.ville_a, trajet.ville_a);
-                strcpy(trajet_a_tester.heure_d, donnee_trouvee);
-                recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee_trouvee);
-                strcpy(trajet_a_tester.heure_a, donnee_trouvee);
-                recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee_trouvee);
-                apply_price(string, reduction, donnee_trouvee, &trajet_a_tester);
-                get_train_number(string, donnee_trouvee, &trajet_a_tester);
-                trajets_trouves[array_size] = trajet_a_tester;
-                array_size++;
-            }
-        }
-    }
-    return array_size;
-}
-
-int select_trajet_le_moins_cher(struct trajet *trajets_trouves, int array_size) {
-    int array_index = array_size + 1;
-    float smallest_price = FLT_MAX;
-    for (int i = 0; i < array_size; i++) {
-        if (trajets_trouves[i].prix < smallest_price) {
-            array_index = i;
-            smallest_price = trajets_trouves[i].prix;
-        }
-    }
-    if (array_index < array_size) {
-        printf("%d\n", array_index);
-        return array_index;
-    }
-    return -1;
-}
-
-int select_trajet_le_plus_rapide(struct trajet *trajets_trouves, int array_size) {
-    int array_index = array_size + 1;
-    int quickest_travel_time = INT_MAX;
-    return 0;
-}
-
 int server_socket_init(int port)
 {
 
@@ -282,55 +155,10 @@ int signal_init()
     return 0;
 }
 
-int exec_choix_un(int client_socket, FILE *file, struct tableaux tableaux_ville)
-{
-    char buffer[MAX_SIZE_STRING] = "";
-    struct trajet struc_buffer;
-    int success = 1;
-    while (success == 1)
-    {
-        success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
-    }
-    success = 1;
-    while (success == 1)
-    {
-        success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
-    }
-    reception_horaire(&struc_buffer, client_socket, 0);
-    recherche_trajet(&struc_buffer, file);
-    affiche_trajet(struc_buffer);
-    envoie_trajet(&struc_buffer, client_socket);
-    return 0;
-}
-
-int exec_choix_deux(int client_socket, FILE *file, struct tableaux tableaux_ville)
-{
-    char buffer[MAX_SIZE_STRING] = "";
-    struct trajet struc_buffer;
-    struct trajet trajets_trouves[MAX_SIZE_STRING];
-    int success = 1;
-    while (success == 1)
-    {
-        success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
-    }
-    success = 1;
-    while (success == 1)
-    {
-        success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
-    }
-    reception_plage_horaire(&struc_buffer, client_socket);
-    int array_size = recherche_n_trajets_selon_plage(struc_buffer, file, trajets_trouves);
-    write(client_socket, &array_size, sizeof(int));
-    envoie_n_trajets(trajets_trouves, array_size, client_socket);
-}
-
 // Boucle d'exécution du serveur stoppable avec Ctrl + C
 // [A REFACTORISER AU MIEUX...]
 void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
 {
-
-    // Message qui signale au client la réussite de la connexion
-    char answer_msg[MAX_SIZE_STRING] = "You have reached the server";
 
     while (true)
     {
@@ -356,9 +184,6 @@ void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
             exit(1);
         }
 
-        // Envoi d'un message confirmant la connexion au serveur
-        write(client_socket, answer_msg, sizeof(answer_msg));
-
         switch (fork())
         {
         case -1:
@@ -366,25 +191,10 @@ void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
             exit(1);
         case 0:
             close(server_socket);
+            int choix = -1;
+            read(client_socket, &choix, sizeof(int));
 
-            char buffer[MAX_SIZE_STRING] = "";
-            struct trajet struc_buffer;
-            struct trajet trajets_trouves[MAX_SIZE_STRING];
-            int success = 1;
-            while (success == 1)
-            {
-                success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
-            }
-            success = 1;
-            while (success == 1)
-            {
-                success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
-            }
-            int array_size = recherche_tous_trajets_selon_itineraire(struc_buffer, file, trajets_trouves);
-            write(client_socket, &array_size, sizeof(int));
-            envoie_n_trajets(trajets_trouves, array_size, client_socket);
-            int array_index = select_trajet_le_moins_cher(trajets_trouves, array_size);
-            write(client_socket, &array_index, sizeof(int));
+            branchement_selon_choix_principal_serveur(choix, client_socket, file, tableaux_ville);
 
             // Envoi du résultat de la requête client grâce au socket de service (write())
             // write(client_socket, &struc_buffer, sizeof(struc_buffer));
@@ -393,6 +203,7 @@ void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
             close(client_socket);
             exit(0);
         default:
+            ;
         }
         // Fermeture de la socket de service (close())
         close(client_socket);
@@ -429,90 +240,13 @@ int client_socket_init(int port)
     return network_socket;
 }
 
-int requete_choix_un(int socket, char *request)
-{
-    char buffer[MAX_SIZE_STRING] = "";
-    struct trajet struc_buffer;
-
-    // Reception des données du serveur
-    memset(buffer, 0, MAX_SIZE_STRING);
-    read(socket, buffer, MAX_SIZE_STRING);
-    printf("%s\n", buffer);
-    // Définition du paramètre pour la fonction suivante
-    strcpy(buffer, "départ");
-    // Saisie, envoi et vérification de la ville de départ
-    ville_existe(socket, buffer);
-
-    // Définition du paramètre pour la fonction suivante
-    strcpy(buffer, "arrivée");
-    // Saisie, envoi et vérification de la ville d'arrivée
-    ville_existe(socket, buffer);
-    lecture_et_envoi_horaire(buffer, socket);
-    lecture_trajet(&struc_buffer, socket);
-    affiche_trajet(struc_buffer);
-    return 0;
-}
-
-int requete_choix_deux(int socket, char *request)
-{
-    char buffer[MAX_SIZE_STRING] = "";
-    struct trajet struc_buffer;
-    struct trajet trajets_trouves[MAX_SIZE_STRING];
-    int array_size = 0;
-
-    // Reception des données du serveur
-    memset(buffer, 0, MAX_SIZE_STRING);
-    read(socket, buffer, MAX_SIZE_STRING);
-    printf("%s\n", buffer);
-    // Définition du paramètre pour la fonction suivante
-    strcpy(buffer, "départ");
-    // Saisie, envoi et vérification de la ville de départ
-    ville_existe(socket, buffer);
-
-    // Définition du paramètre pour la fonction suivante
-    strcpy(buffer, "arrivée");
-    // Saisie, envoi et vérification de la ville d'arrivée
-    ville_existe(socket, buffer);
-    lecture_et_envoie_plage_horaire(socket);
-    read(socket, &array_size, sizeof(int));
-    lecture_n_trajet(trajets_trouves, array_size, socket);
-    for (int i = 0; i < array_size; i++)
-    {
-        affiche_trajet(trajets_trouves[i]);
-    }
-    return 0;
-}
-
 // Gestion de la communication avec le serveur
-int communication_to_server(int socket, char *request)
+int communication_to_server(int socket)
 {
-    char buffer[MAX_SIZE_STRING] = "";
-    struct trajet struc_buffer;
-    struct trajet trajets_trouves[MAX_SIZE_STRING];
-    int array_size = 0;
-    int array_index = 0;
-
-    // Reception des données du serveur
-    memset(buffer, 0, MAX_SIZE_STRING);
-    read(socket, buffer, MAX_SIZE_STRING);
-    printf("%s\n", buffer);
-    // Définition du paramètre pour la fonction suivante
-    strcpy(buffer, "départ");
-    // Saisie, envoi et vérification de la ville de départ
-    ville_existe(socket, buffer);
-
-    // Définition du paramètre pour la fonction suivante
-    strcpy(buffer, "arrivée");
-    // Saisie, envoi et vérification de la ville d'arrivée
-    ville_existe(socket, buffer);
-    read(socket, &array_size, sizeof(int));
-    lecture_n_trajet(trajets_trouves, array_size, socket);
-    for (int i = 0; i < array_size; i++)
-    {
-        affiche_trajet(trajets_trouves[i]);
+    int menu = choix_utilisateur_menu_principal();
+    if (branchement_selon_choix_principal_client(menu, socket) == 0) {
+        printf("Requête complétée, merci et au revoir !\n");
+        return 0;
     }
-    read(socket, &array_index, sizeof(int));
-    affiche_trajet(trajets_trouves[array_index]);
-
-    return 0;
+    return -1;
 }

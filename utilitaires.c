@@ -54,8 +54,12 @@ int verif_des_villes(char ville_struc[MAX_SIZE_STRING], struct tableau tableau_v
 */
 int ville_existe(int socket, char destination[MAX_SIZE_STRING]){
     char buffer[MAX_SIZE_STRING];
+    int i = 0;
     do{
         // Demande util de la ville
+        if (i != 0) {
+            printf("Cette ville n'existe pas dans notre base de données.\n");
+        }
         printf("Entrez une ville de %s : ", destination);
         memset(buffer, 0, MAX_SIZE_STRING);
         fgets(buffer, MAX_SIZE_STRING, stdin);
@@ -65,6 +69,7 @@ int ville_existe(int socket, char destination[MAX_SIZE_STRING]){
         // Récupération du code de succès de la vérification serveur
         memset(buffer, 0, MAX_SIZE_STRING);
         read(socket, buffer , MAX_SIZE_STRING);
+        i++;
     } while(strcmp(buffer,"1") == 0);
     return 0;
 }
@@ -459,8 +464,9 @@ int test_horaire(char horaire[MAX_SIZE_STRING]) {
 
 void lecture_horaire(char horaire[MAX_SIZE_STRING]){
     do{
-        printf("Entrez un horaire valide (hh:mm) : \n");
+        printf("Entrez un horaire valide (hh:mm) : ");
         scanf("%s",horaire);
+        printf("\n");
     }while( test_horaire(horaire) == 1 ); 
 }
 
@@ -622,6 +628,405 @@ int convertir_duree(int nombre_minutes, char horaire_resultat[MAX_SIZE_STRING]) 
     // Utilisation de snprintf pour formater la chaîne de résultat
     snprintf(horaire_resultat, MAX_SIZE_STRING, "%d heures et %d minutes", heures, minutes);
 
+    return 0;
+}
+
+int recherche_trajet(struct trajet *trajet, FILE *fichier_trajets)
+{
+    // Variable qui stocke l'horaire demandé par l'utilisateur
+    char horaire_demande[MAX_SIZE_STRING];
+    strcpy(horaire_demande, trajet->heure_d);
+    // Variable qui stocke une par une chaque ligne du fichier lue par fgets
+    char string[MAX_SIZE_STRING];
+    // Variable qui stocke les données parsées par sscanf une par une
+    char donnee_trouvee[MAX_SIZE_STRING];
+    // Variable qui stocke, une réduction s'il y en a, sinon sera vide
+    char reduction[MAX_SIZE_STRING];
+    // Variable qui indique si nous avons trouvé un train optimal ou si aucun train n'a été trouvé
+    bool result_found = false;
+    // Le fichier a déjà été parcouru à l'initialisation du serveur, on remet donc le curseur au début du fichier
+    rewind(fichier_trajets);
+    while (!feof(fichier_trajets))
+    {
+        // Lecture du fichier ligne par ligne
+        fgets(string, MAX_SIZE_STRING, fichier_trajets);
+        // Vérification de la ville de départ
+        if (match_depart(string, donnee_trouvee, trajet) == 0)
+        {
+            // Vérification de la ville d'arrivée
+            if (match_arrivee(string, donnee_trouvee, trajet) == 0)
+            {
+                // Vérif que l'horaire correspond
+                if (match_horaire(horaire_demande, string, donnee_trouvee, result_found, trajet) == 0)
+                {
+                    apply_price(string, reduction, donnee_trouvee, trajet);
+                    get_train_number(string, donnee_trouvee, trajet);
+                    result_found = true;
+                }
+            }
+        }
+    }
+    // Codes de retour en fonction de si on trouve un train. Interprété par le client
+    if (result_found)
+    {
+        return 0;
+    }
+    return 1;
+}
+
+int recherche_n_trajets_selon_plage(struct trajet trajet, FILE *fichier_trajets, struct trajet *trajets_trouves)
+{
+    char string[MAX_SIZE_STRING];
+    char donnee_trouvee[MAX_SIZE_STRING];
+    char reduction[MAX_SIZE_STRING];
+    int array_size = 0;
+    rewind(fichier_trajets);
+    while (!feof(fichier_trajets))
+    {
+        struct trajet trajet_a_tester;
+        fgets(string, MAX_SIZE_STRING, fichier_trajets);
+        if (match_depart(string, donnee_trouvee, &trajet) == 0)
+        {
+            strcpy(trajet_a_tester.ville_d, trajet.ville_d);
+            if (match_arrivee(string, donnee_trouvee, &trajet) == 0)
+            {
+                strcpy(trajet_a_tester.ville_a, trajet.ville_a);
+                if (match_plage_horaire(trajet, string, donnee_trouvee, &trajet_a_tester) == 0)
+                {
+                    apply_price(string, reduction, donnee_trouvee, &trajet_a_tester);
+                    get_train_number(string, donnee_trouvee, &trajet_a_tester);
+                    trajets_trouves[array_size] = trajet_a_tester;
+                    array_size++;
+                }
+            }
+        }
+    }
+    return array_size;
+}
+
+int recherche_tous_trajets_selon_itineraire(struct trajet trajet, FILE *fichier_trajets, struct trajet *trajets_trouves)
+{
+    char string[MAX_SIZE_STRING];
+    char donnee_trouvee[MAX_SIZE_STRING];
+    char reduction[MAX_SIZE_STRING];
+    int array_size = 0;
+    rewind(fichier_trajets);
+    while (!feof(fichier_trajets))
+    {
+        struct trajet trajet_a_tester;
+        fgets(string, MAX_SIZE_STRING, fichier_trajets);
+        if (match_depart(string, donnee_trouvee, &trajet) == 0)
+        {
+            strcpy(trajet_a_tester.ville_d, trajet.ville_d);
+            if (match_arrivee(string, donnee_trouvee, &trajet) == 0)
+            {
+                strcpy(trajet_a_tester.ville_a, trajet.ville_a);
+                strcpy(trajet_a_tester.heure_d, donnee_trouvee);
+                recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee_trouvee);
+                strcpy(trajet_a_tester.heure_a, donnee_trouvee);
+                recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee_trouvee);
+                apply_price(string, reduction, donnee_trouvee, &trajet_a_tester);
+                get_train_number(string, donnee_trouvee, &trajet_a_tester);
+                trajets_trouves[array_size] = trajet_a_tester;
+                array_size++;
+            }
+        }
+    }
+    return array_size;
+}
+
+int select_trajet_le_moins_cher(struct trajet *trajets_trouves, int array_size)
+{
+    int array_index = array_size + 1;
+    float smallest_price = FLT_MAX;
+    for (int i = 0; i < array_size; i++)
+    {
+        if (trajets_trouves[i].prix < smallest_price)
+        {
+            array_index = i;
+            smallest_price = trajets_trouves[i].prix;
+        }
+    }
+    if (array_index < array_size)
+    {
+        return array_index;
+    }
+    return -1;
+}
+
+int select_trajet_le_plus_rapide(struct trajet *trajets_trouves, int array_size)
+{
+    int array_index = array_size + 1;
+    int quickest_travel_time = INT_MAX;
+    int travel_time;
+    for (int i = 0; i < array_size; i++)
+    {
+        travel_time = duree_trajet(trajets_trouves[i].heure_d, trajets_trouves[i].heure_a);
+        if (travel_time < quickest_travel_time)
+        {
+            array_index = i;
+            quickest_travel_time = travel_time;
+        }
+    }
+    if (array_index < array_size)
+    {
+        return array_index;
+    }
+    return -1;
+}
+
+int select_choix(int choice, struct trajet *trajets_trouves, int array_size)
+{
+    if (choice == 1)
+    {
+        return select_trajet_le_plus_rapide(trajets_trouves, array_size);
+    }
+    else if (choice == 2)
+    {
+        return select_trajet_le_moins_cher(trajets_trouves, array_size);
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+int exec_choix_un(int client_socket, FILE *file, struct tableaux tableaux_ville)
+{
+    char buffer[MAX_SIZE_STRING] = "";
+    struct trajet struc_buffer;
+    int success = 1;
+    int error = 0;
+    while (success == 1)
+    {
+        success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
+    }
+    success = 1;
+    while (success == 1)
+    {
+        success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
+    }
+    reception_horaire(&struc_buffer, client_socket, 0);
+    error = recherche_trajet(&struc_buffer, file);
+    if (error != 0) {
+        write(client_socket, &error, sizeof(int));
+        return 1;
+    }
+    write(client_socket, &error, sizeof(int));
+    envoie_trajet(&struc_buffer, client_socket);
+    return 0;
+}
+
+int exec_choix_deux(int client_socket, FILE *file, struct tableaux tableaux_ville)
+{
+    char buffer[MAX_SIZE_STRING] = "";
+    struct trajet struc_buffer;
+    struct trajet trajets_trouves[MAX_SIZE_STRING];
+    int success = 1;
+    while (success == 1)
+    {
+        success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
+    }
+    success = 1;
+    while (success == 1)
+    {
+        success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
+    }
+    reception_plage_horaire(&struc_buffer, client_socket);
+    int array_size = recherche_n_trajets_selon_plage(struc_buffer, file, trajets_trouves);
+    write(client_socket, &array_size, sizeof(int));
+    envoie_n_trajets(trajets_trouves, array_size, client_socket);
+}
+
+int exec_choix_trois(int client_socket, FILE *file, struct tableaux tableaux_ville)
+{
+    char buffer[MAX_SIZE_STRING] = "";
+    struct trajet struc_buffer;
+    struct trajet trajets_trouves[MAX_SIZE_STRING];
+    int success = 1;
+    while (success == 1)
+    {
+        success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
+    }
+    success = 1;
+    while (success == 1)
+    {
+        success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
+    }
+    int array_size = recherche_tous_trajets_selon_itineraire(struc_buffer, file, trajets_trouves);
+    write(client_socket, &array_size, sizeof(int));
+    envoie_n_trajets(trajets_trouves, array_size, client_socket);
+    int choice;
+    read(client_socket, &choice, sizeof(int));
+    int array_index = select_choix(choice, trajets_trouves, array_size);
+    write(client_socket, &array_index, sizeof(int));
+    return 0;
+}
+
+int requete_choix_un(int socket)
+{
+    char buffer[MAX_SIZE_STRING] = "";
+    struct trajet struc_buffer;
+    int error = 0;
+
+    // Définition du paramètre pour la fonction suivante
+    strcpy(buffer, "départ");
+    // Saisie, envoi et vérification de la ville de départ
+    ville_existe(socket, buffer);
+
+    // Définition du paramètre pour la fonction suivante
+    strcpy(buffer, "arrivée");
+    // Saisie, envoi et vérification de la ville d'arrivée
+    ville_existe(socket, buffer);
+    lecture_et_envoi_horaire(buffer, socket);
+    read(socket, &error, sizeof(int));
+    if (error != 0) {
+        printf("Navrés, aucun train n'est disponible à partir de cet horaire aujourd'hui.\n");
+        return 1;
+    }
+    lecture_trajet(&struc_buffer, socket);
+    affiche_trajet(struc_buffer);
+    return 0;
+}
+
+int requete_choix_deux(int socket)
+{
+    char buffer[MAX_SIZE_STRING] = "";
+    struct trajet struc_buffer;
+    struct trajet trajets_trouves[MAX_SIZE_STRING];
+    int array_size = 0;
+
+
+    // Définition du paramètre pour la fonction suivante
+    strcpy(buffer, "départ");
+    // Saisie, envoi et vérification de la ville de départ
+    ville_existe(socket, buffer);
+
+    // Définition du paramètre pour la fonction suivante
+    strcpy(buffer, "arrivée");
+    // Saisie, envoi et vérification de la ville d'arrivée
+    ville_existe(socket, buffer);
+    lecture_et_envoie_plage_horaire(socket);
+    read(socket, &array_size, sizeof(int));
+    if (array_size == 0) {
+        printf("Navrés, aucun train n'est disponible dans la tranche horaire selectionnée.\n");
+        return 1;
+    }
+    lecture_n_trajet(trajets_trouves, array_size, socket);
+    for (int i = 0; i < array_size; i++)
+    {
+        affiche_trajet(trajets_trouves[i]);
+    }
+    return 0;
+}
+
+int requete_choix_trois(int socket)
+{
+    char buffer[MAX_SIZE_STRING] = "";
+    struct trajet struc_buffer;
+    struct trajet trajets_trouves[MAX_SIZE_STRING];
+    int array_size = 0;
+    int array_index = 0;
+    int choice = -1;
+
+
+    // Définition du paramètre pour la fonction suivante
+    strcpy(buffer, "départ");
+    // Saisie, envoi et vérification de la ville de départ
+    ville_existe(socket, buffer);
+
+    // Définition du paramètre pour la fonction suivante
+    strcpy(buffer, "arrivée");
+    // Saisie, envoi et vérification de la ville d'arrivée
+    ville_existe(socket, buffer);
+    read(socket, &array_size, sizeof(int));
+    lecture_n_trajet(trajets_trouves, array_size, socket);
+    for (int i = 0; i < array_size; i++)
+    {
+        affiche_trajet(trajets_trouves[i]);
+    }
+    printf("Lequel souhaitez-vous sélectioner ? 1 - Trajet le plus rapide | 2 - Trajet le moins cher : ");
+    scanf("%d", &choice);
+    write(socket, &choice, sizeof(int));
+    read(socket, &array_index, sizeof(int));
+    affiche_trajet(trajets_trouves[array_index]);
+    return 0;
+}
+
+int affichage_menu_principal() {
+    printf("----------------------------------------------------\n");
+    printf("                     MAIN MENU                      \n");
+    printf("\n");
+    printf("Souhaitez-vous ?\n");
+    printf("1. Trouver un train selon un itinéraire et un horaire de départ\n");
+    printf("\n");
+    printf("2. Afficher tous les trains possibles selon une tranche horaire\n");
+    printf("\n");
+    printf("3. Trouver le meilleur train selon un itinéraire et des critères (prix ou durée)\n");
+    printf("\n");
+    printf("4. Quitter\n");
+    printf("\n");
+    printf("----------------------------------------------------\n");
+    printf("Votre choix : ");
+
+    return 0;
+}
+
+int choix_utilisateur_menu_principal() {
+    affichage_menu_principal();
+    char buffer[MAX_SIZE_STRING];
+    fgets(buffer, MAX_SIZE_STRING, stdin);
+    buffer[strcspn(buffer, "\n")] = 0;
+    int choix = atoi(buffer);
+    while (choix != 1 && choix != 2 && choix != 3 && choix != 4) {
+        printf("Erreur de saisie, entrez 1 , 2 , 3 ou 4 : ");
+        fgets(buffer, MAX_SIZE_STRING, stdin);
+        buffer[strcspn(buffer, "\n")] = 0;
+        printf("\n");
+        choix = atoi(buffer);
+    }
+    return choix;
+}
+
+int branchement_selon_choix_principal_client(int choix, int socket) {
+    switch (choix) {
+        case 1:
+            write(socket, &choix, sizeof(int));
+            requete_choix_un(socket);
+            break;
+        case 2:
+            write(socket, &choix, sizeof(int));
+            requete_choix_deux(socket);
+            break;
+        case 3:
+            write(socket, &choix, sizeof(int));
+            requete_choix_trois(socket);
+            break;
+        case 4:
+            printf("Merci et au revoir.\n");
+            exit(0);
+        default:
+            printf("Comment êtes-vous arrivé(e) ici...?\n");
+            exit(-1);
+    }
+    return 0;
+}
+
+int branchement_selon_choix_principal_serveur(int choix, int socket, FILE* file, struct tableaux tableaux_ville) {
+    switch (choix) {
+        case 1:
+            exec_choix_un(socket, file, tableaux_ville);
+            break;
+        case 2:
+            exec_choix_deux(socket, file, tableaux_ville);
+            break;
+        case 3:
+            exec_choix_trois(socket, file, tableaux_ville);
+            break;
+        default:
+            printf("Comment êtes-vous arrivé(e) ici...?\n");
+            exit(-1);
+    }
     return 0;
 }
 

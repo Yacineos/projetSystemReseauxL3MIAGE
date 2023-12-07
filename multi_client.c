@@ -86,7 +86,7 @@ int multiple_client_requests(int nb_clients, int port, char* request) {
             case -1:
                 perror("Fork failed");
                 exit(1);
-            case 0:
+            case 0: ;
                 int inner_socket = client_socket_init(port);
                 if (communication_to_server(inner_socket, request) != 0) {
                     printf("Erreur de communication serveur avec le fils %d\n", i);
