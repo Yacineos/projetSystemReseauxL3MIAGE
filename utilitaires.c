@@ -76,7 +76,6 @@ int ville_existe(int socket, char destination[MAX_SIZE_STRING]){
     la fonction renvoie status d'erreur dès l'erreur sur un seul envoie 
 */
 int envoie_n_trajets(struct trajet *tableau_de_trajet , int n , int socket_service){
-    
     for(int i = 0 ; i < n ; i++){
         if(envoie_trajet(&tableau_de_trajet[i],socket_service) != 0){
             printf("erreur dans l'envoie du trajet : %d",i+1);
@@ -149,7 +148,7 @@ int envoie_trajet(struct trajet *trajet_train , int socket_service){
  */
 
 void affiche_trajet(struct trajet struc_trajet){
-    printf("num: %d | villDep: %s | villArr: %s | heureDep: %s | heureArr: %s | prix: %f \n",struc_trajet.num_train , struc_trajet.ville_d , struc_trajet.ville_a , struc_trajet.heure_d , struc_trajet.heure_a , struc_trajet.prix );
+    printf("Le train numéro %d au départ de %s et à destination de %s prévu à %s arrivera à %s. Coût du billet : %.2f\n",struc_trajet.num_train , struc_trajet.ville_d , struc_trajet.ville_a , struc_trajet.heure_d , struc_trajet.heure_a , struc_trajet.prix );
 }
 
 /*
@@ -276,8 +275,258 @@ float calcule_prix(char prix_trajet[MAX_SIZE_STRING], char tarif[MAX_SIZE_STRING
     } else if (strcmp(tarif, "SUPPL") == 0) {
         prix = prix + ((10 * prix) / 100);
     }
-
     return prix;
+}
+
+int recuperation_champs_fichier(char formula[], char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING]) {
+    int formula_size = snprintf(NULL, 0, "%s", formula);
+    char format_formula[formula_size + 1];
+    sprintf(format_formula, "%s", formula);
+    memset(donnee, 0, MAX_SIZE_STRING);
+    sscanf(string, format_formula, donnee);
+    return 0;
+}
+
+int match_depart(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet) {
+    recuperation_champs_fichier("%*[^;];%127[^;]", string, donnee);
+    if (strcmp(donnee, trajet->ville_d) == 0) {
+        recuperation_champs_fichier("%*[^;];%*[^;];%127[^;]", string, donnee);
+        return 0;
+    }
+    return 1;
+}
+
+int match_arrivee(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet) {
+    if (strcmp(donnee, trajet->ville_a) == 0) {
+        recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee);
+        return 0;
+    }
+    return 1;
+}
+
+int match_horaire(char horaire_demande[MAX_SIZE_STRING], char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], bool result_found, struct trajet *trajet) {
+    if ((compare_horaire(horaire_demande, donnee) == 0 && !result_found) || (compare_horaire(horaire_demande, donnee) == 0 && compare_horaire(donnee, trajet->heure_d) == 0 && result_found)) {
+        strcpy(trajet->heure_d, donnee);
+        recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee);
+        strcpy(trajet->heure_a, donnee);
+        recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee);
+        return 0;
+    }
+    return 1;
+}
+
+int match_plage_horaire(struct trajet trajet, char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet_a_tester) {
+    if (compare_horaire(trajet.heure_d, donnee) == 0 && compare_horaire(donnee, trajet.heure_a) == 0) {
+        strcpy(trajet_a_tester->heure_d, donnee);
+        recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee);
+        strcpy(trajet_a_tester->heure_a, donnee);
+        recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee);
+        return 0;
+    }
+    return 1;
+}
+
+int apply_price(char string[MAX_SIZE_STRING], char reduction[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet) {
+    if (sscanf(string, "%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", reduction) == 1) {
+        donnee[strcspn(donnee, "\n")] = 0;
+        reduction[strcspn(reduction, "\n")] = 0;
+        trajet->prix = calcule_prix(donnee, reduction);
+        return 0;
+    } else {
+        memset(reduction, 0, MAX_SIZE_STRING);
+        trajet->prix = calcule_prix(donnee, reduction);
+        return 1;
+    }
+    return -1;
+}
+
+int get_train_number(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet) {
+    recuperation_champs_fichier("%127[^;]", string, donnee);
+    trajet->num_train = atoi(donnee);
+}
+
+
+/*
+ * fonction qui reception un horaire et l'affecte à un trajet fournie en parmètre
+ * 
+ * @param struct trajet * 
+ * @param int socket
+ * @param type_horaire si 0 on affecte l'horaire lu dans ville depart 
+ *                     si 1 on affecte l'horaire lu dans ville arrivée 
+ * 
+ * @return int status 1 pour erreur , 0 pour success 
+ * 
+ */
+int reception_horaire(struct trajet *trajet_courant , int socket , int type_horaire){
+    char buffer[MAX_SIZE_STRING];
+    memset(buffer , 0 , MAX_SIZE_STRING);
+    if(read(socket,&buffer,MAX_SIZE_STRING) == -1){
+        perror("erreur lecture horaire");
+        return 1 ;
+    }
+    if(type_horaire == 0){
+        strcpy(trajet_courant->heure_d,buffer);    
+    }else{
+        strcpy(trajet_courant->heure_a,buffer);    
+    }
+    
+    return 0;
+
+}
+
+/*
+ * Fonction qui vérifie si l'horaire entré respecte les normes (entre 00:00 et 23:59)
+ *
+ * @param char horaire[256] : horaire entrée par l'utilisateur
+ *
+ * @return int response : 0 si l'horaire est dans les normes, 1 sinon
+ */
+int test_horaire(char horaire[MAX_SIZE_STRING]) {
+    // Vérifier la longueur de l'horaire
+    if (strlen(horaire) != 5 && strlen(horaire) != 4) {
+        return 1; // Longueur incorrecte
+    }
+
+    // Extraire les heures et minutes
+    int heures, minutes;
+    if (sscanf(horaire, "%d:%d", &heures, &minutes) != 2 && sscanf(horaire, "%d:%d", &heures, &minutes) != 1) {
+        return 1; // Format incorrect
+    }
+
+    // Vérifier les plages horaires
+    if (heures < 0 || heures > 23 || minutes < 0 || minutes > 59) {
+        return 1; // Plage horaire invalide
+    }
+
+    // L'horaire est valide
+    return 0;
+}
+
+
+/*
+ *  une fonction qui lit une horaire au clavier et verifie si elle est valide ou pas 
+ *  si elle est pas valide elle relit une autre
+ *  sinon elle retourne affecte l'horaire lu à celle passée en paramètre
+ * 
+ *  @param char[256] horaire
+ *  
+ *  @return void
+ */
+
+void lecture_horaire(char horaire[MAX_SIZE_STRING]){
+    do{
+        printf("Entrez un horaire valide (hh:mm) : \n");
+        scanf("%s",horaire);
+    }while( test_horaire(horaire) == 1 ); 
+}
+
+
+
+/*
+ * Fonction qui envoie une horaire 
+ * on suppose que horaire est valide 
+ * si c'est valide elle envoie au serveur et renvoie 0
+ * sinon elle renvoie 1
+ * 
+ *  @param l'horaire à envoyer : char[256]
+ * 
+ *  @return status : int 
+ */
+
+int envoie_horaire(char horaire[MAX_SIZE_STRING] , int socket){
+
+    char buffer[MAX_SIZE_STRING] ;
+    memset(buffer , 0 , MAX_SIZE_STRING);
+    strcpy(buffer,horaire);
+    if(write(socket , &buffer , MAX_SIZE_STRING) == -1){
+        perror("erreur dans l'envoie de l'heure");
+        return 1 ;
+    }
+    return 0;
+}
+
+int lecture_et_envoi_horaire(char horaire[MAX_SIZE_STRING], int socket) {
+    lecture_horaire(horaire);
+    envoie_horaire(horaire, socket);
+    return 0;
+}
+
+/* #include "utilitaires.h"
+
+struct trajet* nouveau_trajet() {
+    struct trajet *trajet;
+    trajet->prix = 10.0;
+    return trajet;
+}
+
+int main() {
+    printf("%f", nouveau_trajet()->prix);
+    return 0;
+}
+ * 
+ * Fonction qui récupère une plage horaire entré au clavier les 2 horaires et les envoie au serveur une par une
+ * 
+ * @param int socket
+ * 
+ * @return status : int si 1 donc erreur
+ *                      si 0 success
+ *  
+ */
+int lecture_et_envoie_plage_horaire(int socket){
+    // declare 2 horaires
+    char horaire1[MAX_SIZE_STRING] ;
+    char horaire2[MAX_SIZE_STRING] ;
+
+    // on répète jusqu'à avoir une plage horaire valide (compare_horaire)
+    do{
+        printf("---------------------------------------------\n");
+        printf("Entrez une plage horaire :\n");
+        printf("Horaire 1 -- ");
+        // * Appel get horaire 2 fois
+        lecture_horaire(horaire1);
+        printf("Horaire 2 -- ");
+        lecture_horaire(horaire2);
+        //Vérifie que la 2 horaire est supérieur à la première
+            // si c'est pas le cas on redemande les 2 horaires et on affiche l'erreur
+    }while(compare_horaire(horaire1,horaire2) != 0 );
+    // appel envoie_horaire 2 fois 
+    if(envoie_horaire(horaire1,socket) != 0){
+        perror("Erreur envoie horaire dans lecture_et_envoie_plage_horaire ");
+        return 1 ;
+    }
+    if(envoie_horaire(horaire2,socket) != 0){
+        perror("Erreur envoie horaire dans lecture_et_envoie_plage_horaire ");
+        return 1;
+    }
+    printf("---------------------------------------------\n");
+    // retourne code de reussite
+    return 0 ;
+}
+
+/* 
+ * Fonction qui récéptionne une plage horaire et l'affecte au trajet passée en paramètre
+ * où l'heure de départ est la première horaire de la plage
+ * l'heure d'arrivée est la 2 ème horaire de la plage
+ * 
+ * @param struct trajet* 
+ * @param int socket 
+ *  
+ * @return int status renvoie 0 si success
+ *                            1 si failure
+*/
+int reception_plage_horaire(struct trajet *trajet_courant , int socket ){
+
+    if(reception_horaire(trajet_courant , socket , 0) != 0){
+        perror("erreur lors de la reception in reception_plage_horaire");
+        return 1 ;
+    }
+
+    if(reception_horaire(trajet_courant , socket , 1) != 0){
+        perror("erreur lors de la reception in reception_plage_horaire");
+        return 1 ;
+    }
+
+    return 0;
 }
 
 

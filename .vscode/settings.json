@@ -12,7 +12,8 @@
         "socket.h": "c",
         "unistd.h": "c",
         "stdio.h": "c",
-        "utilitaires.h": "c"
+        "utilitaires.h": "c",
+        "string": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

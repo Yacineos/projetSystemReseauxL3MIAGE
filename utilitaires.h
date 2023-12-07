@@ -75,6 +75,8 @@ int verif_des_villes(char ville_struc[MAX_SIZE_STRING], struct tableau tableau_v
 
 int ville_existe(int socket, char destination[MAX_SIZE_STRING]);
 
+int envoie_n_trajets(struct trajet *tableau_de_trajet , int n , int socket_service);
+
 int envoie_trajet(struct trajet *trajet_train , int socket_service);
 
 void affiche_trajet(struct trajet struc_trajet);
@@ -88,5 +90,33 @@ void supprimerCaractere(char chaine[], char caractere);
 int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve[MAX_SIZE_STRING]);
 
 float calcule_prix(char prix_trajet[MAX_SIZE_STRING], char tarif[MAX_SIZE_STRING]);
+
+int recuperation_champs_fichier(char formula[], char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING]);
+
+int match_depart(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet);
+
+int match_arrivee(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet);
+
+int match_horaire(char horaire_demande[MAX_SIZE_STRING], char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], bool result_found, struct trajet *trajet);
+
+int match_plage_horaire(struct trajet trajet, char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet_a_tester);
+
+int apply_price(char string[MAX_SIZE_STRING], char reduction[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet);
+
+int get_train_number(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet);
+
+int reception_horaire(struct trajet *trajet_courant , int socket , int type_horaire);
+
+int test_horaire(char horaire[MAX_SIZE_STRING]);
+
+void lecture_horaire(char horaire[MAX_SIZE_STRING]);
+
+int envoie_horaire(char horaire[MAX_SIZE_STRING] , int socket);
+
+int lecture_et_envoi_horaire(char horaire[MAX_SIZE_STRING], int socket);
+
+int lecture_et_envoie_plage_horaire(int socket);
+
+int reception_plage_horaire(struct trajet *trajet_courant , int socket );
 
 #endif // UTILITAIRES_H
