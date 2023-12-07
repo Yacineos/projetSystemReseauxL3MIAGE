@@ -144,7 +144,7 @@ int envoie_trajet(struct trajet *trajet_train , int socket_service){
 
 /*
  * Fonction qui affiche un trajet reçu en paramètre 
- *
+ *  @param : struct trajet
  */
 
 void affiche_trajet(struct trajet struc_trajet){
@@ -232,8 +232,10 @@ int lecture_n_trajet(struct trajet *list_trajet_a_remplir, int n , int socket ){
     return 0 ;
 }
 
-//fonction pour suprimer un char d'un char[256]
-void supprimerCaractere(char chaine[], char caractere) {
+/* Fonction qui supprime un caractère d'une chaîne de caractères 
+ *  @param : char chaîne de caractères à traiter, char caractère à retirer de la chaîne
+ */
+void supprimerCaractere(char chaine[MAX_SIZE_STRING], char caractere) {
     int i, j;
     char copie_chaine[MAX_SIZE_STRING];
 
@@ -246,7 +248,11 @@ void supprimerCaractere(char chaine[], char caractere) {
     }
 }
 
-//fonction qui compare les deux horaires
+/* Fonction qui compare deux horaires passés en paramètre et renvoie un résultat en fonction du plus grand paramètre
+ *  @param : char horaire demandé (comparant), char horaire trouvé (comparé)
+ *  @return : int 0 si comparant < comparé
+ *            int 1 si comparant > comparé
+ */ 
 int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve[MAX_SIZE_STRING]){
     char copie_h_depart_demande[MAX_SIZE_STRING];
     strcpy(copie_h_depart_demande, h_depart_demande); // Copie de la chaîne d'origine
@@ -266,6 +272,10 @@ int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve
     return 1;
 }
 
+/* Fonction qui permet de convertir une chaîne de caractère en un float et de calculer un prix par rapport à la chaîne convertie et une éventuelle réduction ou supplément
+ * @param : char prix de base du trajet, char "REDUC", "SUPPL" ou une chaîne quelconque
+ * @return : float prix du billet calculé 
+ */
 float calcule_prix(char prix_trajet[MAX_SIZE_STRING], char tarif[MAX_SIZE_STRING]) {
     float prix;
     prix = atof(prix_trajet);
@@ -278,6 +288,10 @@ float calcule_prix(char prix_trajet[MAX_SIZE_STRING], char tarif[MAX_SIZE_STRING
     return prix;
 }
 
+/* Fonction qui permet de récupérer une chaîne de caractère correspondant à une expression régulière passée en paramètre et de la stocker dans le buffer passé en paramètre
+ *  @param : char expression régulière sous forme de chaîne de caractère, char chaîne de caractère à parser, char chaîne de caractère buffer
+ *  @return : int 0 si la fonction ne crash pas
+ */
 int recuperation_champs_fichier(char formula[], char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING]) {
     int formula_size = snprintf(NULL, 0, "%s", formula);
     char format_formula[formula_size + 1];
@@ -287,6 +301,11 @@ int recuperation_champs_fichier(char formula[], char string[MAX_SIZE_STRING], ch
     return 0;
 }
 
+/* Fonction qui permet de vérifier qu'une ville de départ passée en paramètres correspôn à la ville de départ du trajet dont la chaîne de caractère est passée en paramètres
+ *  @param : char chaîne de caratère contenant les données brutes d'un trajet, char chaîne de caractère servant de buffer pour récupérer la ville de départ du premier argument, struct trajet un trajet avec une ville de départ à comparer
+ *  @return : int 0 si match entre la ville récupérée et la ville de départ du trajet passé en paramètre
+ *            int 1 si pas match
+ */
 int match_depart(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet) {
     recuperation_champs_fichier("%*[^;];%127[^;]", string, donnee);
     if (strcmp(donnee, trajet->ville_d) == 0) {
