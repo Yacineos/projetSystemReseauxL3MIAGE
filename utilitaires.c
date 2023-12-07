@@ -1,3 +1,8 @@
+/* 
+* Fichier qui contient la définition de toutes les fonctions utilitaires qui ne font pas partie du processus d'initialisation du serveur, du client ou bien de leurs protocoles
+*/
+
+
 #include <stdio.h> 
 #include "utilitaires.h"
 
@@ -148,7 +153,8 @@ int envoie_trajet(struct trajet *trajet_train , int socket_service){
  */
 
 void affiche_trajet(struct trajet struc_trajet){
-    printf("Le train numéro %d au départ de %s et à destination de %s prévu à %s arrivera à %s. Coût du billet : %.2f\n",struc_trajet.num_train , struc_trajet.ville_d , struc_trajet.ville_a , struc_trajet.heure_d , struc_trajet.heure_a , struc_trajet.prix );
+    printf("| Le train numéro %d au départ de %s et à destination de %s prévu à %s arrivera à %s. Coût du billet : %.2f |\n",struc_trajet.num_train , struc_trajet.ville_d , struc_trajet.ville_a , struc_trajet.heure_d , struc_trajet.heure_a , struc_trajet.prix );
+    printf("--------------------------------------------\n");
 }
 
 /*
@@ -301,7 +307,7 @@ int recuperation_champs_fichier(char formula[], char string[MAX_SIZE_STRING], ch
     return 0;
 }
 
-/* Fonction qui permet de vérifier qu'une ville de départ passée en paramètres correspôn à la ville de départ du trajet dont la chaîne de caractère est passée en paramètres
+/* Fonction qui permet de vérifier qu'une ville de départ passée en paramètres correspond à la ville de départ du trajet dont la chaîne de caractère est passée en paramètres
  *  @param : char chaîne de caratère contenant les données brutes d'un trajet, char chaîne de caractère servant de buffer pour récupérer la ville de départ du premier argument, struct trajet un trajet avec une ville de départ à comparer
  *  @return : int 0 si match entre la ville récupérée et la ville de départ du trajet passé en paramètre
  *            int 1 si pas match
@@ -315,6 +321,11 @@ int match_depart(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], str
     return 1;
 }
 
+/* Fonction qui permet de vérifier qu'une ville d'arrivée passée en paramètres correspond à la ville d'arrivée du trajet dont la chaîne de caractère est passée en paramètres
+ *  @param : char chaîne de caratère contenant les données brutes d'un trajet, char chaîne de caractère servant de buffer pour récupérer la ville d'arrivée du premier argument, struct trajet un trajet avec une ville d'arrivée à comparer
+ *  @return : int 0 si match entre la ville récupérée et la ville d'arrivée du trajet passé en paramètre
+ *            int 1 si pas match
+ */
 int match_arrivee(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet) {
     if (strcmp(donnee, trajet->ville_a) == 0) {
         recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee);
@@ -323,6 +334,13 @@ int match_arrivee(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], st
     return 1;
 }
 
+/* Fonction qui permet de vérifier qu'un horaire passée en paramètres est inférieur à l'horaire de du trajet dont la chaîne de caractère est passée en paramètres et s'il est, assigne les valeurs de départ et d'arrvée dans la structure 
+ * S'il y a déjà un trajet trouvé auparavant, compare aussi le nouvel horaire avec l'horaire du trajet précédemment trouvé. Si le nouvel horaire trouvé < ancien horaire trouvé, on remplace l'ancien trajet par le nouveau 
+ *  @param : char horaire demandée sous forme de chaîne de caractères, char chaîne de caratère contenant les données brutes d'un trajet, 
+ *           char chaîne de caractère servant de buffer pour récupérer l'horaire d'arrivée du second argument, bool true si un trajet optimal a déjà été trouvé auparavant, struct trajet un trajet dont on veut remplir l'heure de départ et d'arrivée
+ *  @return : int 0 si l'horaire trouvé correspond et que les données ont été correctement assignées à la structure
+ *            int 1 si pas match
+ */
 int match_horaire(char horaire_demande[MAX_SIZE_STRING], char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], bool result_found, struct trajet *trajet) {
     if ((compare_horaire(horaire_demande, donnee) == 0 && !result_found) || (compare_horaire(horaire_demande, donnee) == 0 && compare_horaire(donnee, trajet->heure_d) == 0 && result_found)) {
         strcpy(trajet->heure_d, donnee);
@@ -334,6 +352,13 @@ int match_horaire(char horaire_demande[MAX_SIZE_STRING], char string[MAX_SIZE_ST
     return 1;
 }
 
+/* Fonction qui permet de vérifier que l'horaire de départ d'un trajet dont la chaîne de caractères est passée en paramètres correspond à une plage horaire contenue dans une structure et met à jour les champs de laseconde structure 
+ * passée en paramètre si cela correspond.  
+ *  @param : struct trajet qui contient la plage horaire demandée, char chaîne de caractère du trajet à tester, char chaîne buffer pour les données à tester, 
+ * struct trajet qui est la structure à remplir si le trajet trouvé correspond à nos critères
+ *  @return : int 0 si l'horaire testé correspond à la plage horaire demandée et que l'attribution se fait correctement
+ *            int 1 sinon
+ */           
 int match_plage_horaire(struct trajet trajet, char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet_a_tester) {
     if (compare_horaire(trajet.heure_d, donnee) == 0 && compare_horaire(donnee, trajet.heure_a) == 0) {
         strcpy(trajet_a_tester->heure_d, donnee);
@@ -544,6 +569,58 @@ int reception_plage_horaire(struct trajet *trajet_courant , int socket ){
         perror("erreur lors de la reception in reception_plage_horaire");
         return 1 ;
     }
+
+    return 0;
+}
+
+/*
+    Fonction qui calcule la durée en minutes d’une plage horaire VALIDE 
+    donc l'horaire d'arrivée est forcément après l'horaire de départ 
+
+    @param char horaire1[MAX_SIZE_STRING]
+    @param char horaire2[MAX_SIZE_STRING]
+
+    Exemple : 8:55 , 12:00 ->  185 minutes
+    @return int durée du trajet en minutes
+
+*/
+int duree_trajet(char horaire1[MAX_SIZE_STRING], char horaire2[MAX_SIZE_STRING]) {
+    // Parse hours and minutes from the input strings
+    int heure1, minute1, heure2, minute2;
+
+    sscanf(horaire1, "%d:%d", &heure1, &minute1);
+    sscanf(horaire2, "%d:%d", &heure2, &minute2);
+
+    // Calculate the duration in minutes
+    int duration = (heure2 - heure1) * 60 + (minute2 - minute1);
+
+    return duration;
+}
+
+
+
+/*
+    Fonction qui convertit un nombre de minutes en format "x heures et y minutes"
+
+    Exemple : 123 minutes -> “2 heures et 3 minutes”
+
+    @param int nombre_minutes : Le nombre de minutes à convertir
+    @param char horaire_resultat[MAX_SIZE_STRING] : La chaîne où le résultat sera écrit
+
+    @return int Retourne 1 en cas d'erreur, 0 sinon
+*/
+int convertir_duree(int nombre_minutes, char horaire_resultat[MAX_SIZE_STRING]) {
+    if (nombre_minutes < 0)
+    {
+        // Gestion d'une entrée invalide (nombre de minutes négatif)
+        return 1; // false
+    }
+
+    int heures = nombre_minutes / 60;
+    int minutes = nombre_minutes % 60;
+
+    // Utilisation de snprintf pour formater la chaîne de résultat
+    snprintf(horaire_resultat, MAX_SIZE_STRING, "%d heures et %d minutes", heures, minutes);
 
     return 0;
 }

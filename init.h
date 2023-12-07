@@ -1,9 +1,15 @@
+/* Fichier qui contient la déclaration de toutes les fonctions d'initialisation du serveur, du client ainsi que de leurs protocoles. 
+ * Contient également les includes appropriés pour l'utilisation des fonctions qui en découlent.
+ */
+
 // Les include génériques
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <string.h>
+#include <limits.h>
+#include <float.h>
 
 // Les include pour traiter le signal
 #include <sys/wait.h>
@@ -29,6 +35,12 @@ int init_v_arrivee(int compteur_varrivee, char v_arrivee[MAX_SIZE_STRING], bool 
 struct tableaux server_data_init(FILE* file);
 
 int recherche_trajet(struct trajet *trajet, FILE* fichier_trajets);
+
+int recherche_n_trajets_selon_plage(struct trajet trajet, FILE *fichier_trajets, struct trajet *trajets_trouves);
+
+int recherche_tous_trajets_selon_itineraire(struct trajet trajet, FILE *fichier_trajets, struct trajet *trajets_trouves);
+
+int select_trajet_le_moins_cher(struct trajet *trajets_trouves, int array_size);
 
 int server_socket_init(int port);
 

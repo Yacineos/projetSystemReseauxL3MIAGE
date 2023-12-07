@@ -1,3 +1,5 @@
+/* Fichier qui contient le programme principal du serveur. Celui-ci ne se charge que d'exécuter les différents protocoles et fonctions qui ont été définis dans d'autres fichiers attitrés */
+
 // Les include génériques
  #include "stdio.h"
  #include "stdlib.h"
@@ -6,6 +8,8 @@
  #include "string.h"
 
 // Les include pour traiter le signal
+
+
 #include <sys/wait.h>
 #include <newlib/sys/select.h>
 #include <signal.h>

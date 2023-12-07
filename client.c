@@ -1,3 +1,5 @@
+/* Fichier qui contient le programme principal du client. Celui-ci ne se charge que d'exécuter les différents protocoles et fonctions qui ont été définis dans d'autres fichiers attitrés */
+
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>

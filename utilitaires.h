@@ -1,3 +1,8 @@
+/* 
+* Fichier qui contient la déclaration de toutes les fonctions utilitaires qui ne font pas partie du processus d'initialisation du serveur, du client ou bien de leurs protocoles
+* Contient également les includes appropriés pour l'utilisation des fonctions qui en découlent.
+*/
+
 // Setup des gardes d'inclusion (Mécanisme qui empêche les inclusions multiples dans le même fichier objet)
 #ifndef UTILITAIRES_H
 #define UTILITAIRES_H
@@ -118,5 +123,9 @@ int lecture_et_envoi_horaire(char horaire[MAX_SIZE_STRING], int socket);
 int lecture_et_envoie_plage_horaire(int socket);
 
 int reception_plage_horaire(struct trajet *trajet_courant , int socket );
+
+int duree_trajet(char horaire1[MAX_SIZE_STRING], char horaire2[MAX_SIZE_STRING]);
+
+int convertir_duree(int nombre_minutes, char horaire_resultat[MAX_SIZE_STRING]);
 
 #endif // UTILITAIRES_H

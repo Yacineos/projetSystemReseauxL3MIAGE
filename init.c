@@ -1,3 +1,8 @@
+/* 
+* Fichier qui contient la définition de toutes les fonctions d'initialisation du serveur, du client ainsi que de leurs protocoles
+*/
+
+
 #include <stdio.h>
 #include "init.h"
 #include "utilitaires.h"
@@ -156,13 +161,11 @@ int recherche_n_trajets_selon_plage(struct trajet trajet, FILE *fichier_trajets,
         if (match_depart(string, donnee_trouvee, &trajet) == 0)
         {
             strcpy(trajet_a_tester.ville_d, trajet.ville_d);
-            // Vérification de la ville d'arrivée
             if (match_arrivee(string, donnee_trouvee, &trajet) == 0)
             {
                 strcpy(trajet_a_tester.ville_a, trajet.ville_a);
                 if (match_plage_horaire(trajet, string, donnee_trouvee, &trajet_a_tester) == 0)
                 {
-                    // OK JUSQU'ICI
                     apply_price(string, reduction, donnee_trouvee, &trajet_a_tester);
                     get_train_number(string, donnee_trouvee, &trajet_a_tester);
                     trajets_trouves[array_size] = trajet_a_tester;
@@ -172,6 +175,59 @@ int recherche_n_trajets_selon_plage(struct trajet trajet, FILE *fichier_trajets,
         }
     }
     return array_size;
+}
+
+int recherche_tous_trajets_selon_itineraire(struct trajet trajet, FILE *fichier_trajets, struct trajet *trajets_trouves)
+{
+    char string[MAX_SIZE_STRING];
+    char donnee_trouvee[MAX_SIZE_STRING];
+    char reduction[MAX_SIZE_STRING];
+    int array_size = 0;
+    rewind(fichier_trajets);
+    while (!feof(fichier_trajets))
+    {
+        struct trajet trajet_a_tester;
+        fgets(string, MAX_SIZE_STRING, fichier_trajets);
+        if (match_depart(string, donnee_trouvee, &trajet) == 0)
+        {
+            strcpy(trajet_a_tester.ville_d, trajet.ville_d);
+            if (match_arrivee(string, donnee_trouvee, &trajet) == 0)
+            {
+                strcpy(trajet_a_tester.ville_a, trajet.ville_a);
+                strcpy(trajet_a_tester.heure_d, donnee_trouvee);
+                recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee_trouvee);
+                strcpy(trajet_a_tester.heure_a, donnee_trouvee);
+                recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee_trouvee);
+                apply_price(string, reduction, donnee_trouvee, &trajet_a_tester);
+                get_train_number(string, donnee_trouvee, &trajet_a_tester);
+                trajets_trouves[array_size] = trajet_a_tester;
+                array_size++;
+            }
+        }
+    }
+    return array_size;
+}
+
+int select_trajet_le_moins_cher(struct trajet *trajets_trouves, int array_size) {
+    int array_index = array_size + 1;
+    float smallest_price = FLT_MAX;
+    for (int i = 0; i < array_size; i++) {
+        if (trajets_trouves[i].prix < smallest_price) {
+            array_index = i;
+            smallest_price = trajets_trouves[i].prix;
+        }
+    }
+    if (array_index < array_size) {
+        printf("%d\n", array_index);
+        return array_index;
+    }
+    return -1;
+}
+
+int select_trajet_le_plus_rapide(struct trajet *trajets_trouves, int array_size) {
+    int array_index = array_size + 1;
+    int quickest_travel_time = INT_MAX;
+    return 0;
 }
 
 int server_socket_init(int port)
@@ -311,7 +367,24 @@ void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
         case 0:
             close(server_socket);
 
-            exec_choix_deux(client_socket, file, tableaux_ville);
+            char buffer[MAX_SIZE_STRING] = "";
+            struct trajet struc_buffer;
+            struct trajet trajets_trouves[MAX_SIZE_STRING];
+            int success = 1;
+            while (success == 1)
+            {
+                success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
+            }
+            success = 1;
+            while (success == 1)
+            {
+                success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
+            }
+            int array_size = recherche_tous_trajets_selon_itineraire(struc_buffer, file, trajets_trouves);
+            write(client_socket, &array_size, sizeof(int));
+            envoie_n_trajets(trajets_trouves, array_size, client_socket);
+            int array_index = select_trajet_le_moins_cher(trajets_trouves, array_size);
+            write(client_socket, &array_index, sizeof(int));
 
             // Envoi du résultat de la requête client grâce au socket de service (write())
             // write(client_socket, &struc_buffer, sizeof(struc_buffer));
@@ -380,7 +453,8 @@ int requete_choix_un(int socket, char *request)
     return 0;
 }
 
-int requete_choix_deux(int socket, char *request) {
+int requete_choix_deux(int socket, char *request)
+{
     char buffer[MAX_SIZE_STRING] = "";
     struct trajet struc_buffer;
     struct trajet trajets_trouves[MAX_SIZE_STRING];
@@ -412,8 +486,33 @@ int requete_choix_deux(int socket, char *request) {
 // Gestion de la communication avec le serveur
 int communication_to_server(int socket, char *request)
 {
+    char buffer[MAX_SIZE_STRING] = "";
+    struct trajet struc_buffer;
+    struct trajet trajets_trouves[MAX_SIZE_STRING];
+    int array_size = 0;
+    int array_index = 0;
 
-    requete_choix_deux(socket, request);
+    // Reception des données du serveur
+    memset(buffer, 0, MAX_SIZE_STRING);
+    read(socket, buffer, MAX_SIZE_STRING);
+    printf("%s\n", buffer);
+    // Définition du paramètre pour la fonction suivante
+    strcpy(buffer, "départ");
+    // Saisie, envoi et vérification de la ville de départ
+    ville_existe(socket, buffer);
+
+    // Définition du paramètre pour la fonction suivante
+    strcpy(buffer, "arrivée");
+    // Saisie, envoi et vérification de la ville d'arrivée
+    ville_existe(socket, buffer);
+    read(socket, &array_size, sizeof(int));
+    lecture_n_trajet(trajets_trouves, array_size, socket);
+    for (int i = 0; i < array_size; i++)
+    {
+        affiche_trajet(trajets_trouves[i]);
+    }
+    read(socket, &array_index, sizeof(int));
+    affiche_trajet(trajets_trouves[array_index]);
 
     return 0;
 }

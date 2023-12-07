@@ -13,7 +13,9 @@
         "unistd.h": "c",
         "stdio.h": "c",
         "utilitaires.h": "c",
-        "string": "c"
+        "string": "c",
+        "compare": "c",
+        "random": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
