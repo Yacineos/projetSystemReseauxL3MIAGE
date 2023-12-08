@@ -1,84 +1,34 @@
-/* Fichier qui contient le programme principal du client. Celui-ci ne se charge que d'exécuter les différents protocoles et fonctions qui ont été définis dans d'autres fichiers attitrés */
+/* Fichier qui contient le programme principal du client. Le rôle de celui-ci est de se connecter à un serveur et de lui communiquer des requêtes que celui-ci 
+devra satisfaire. Le client reçoit alors des réponses diverses en fonction de sa requête et saura les interpréter */
 
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <string.h>
-#include <arpa/inet.h>
-
-
-/* Creation de la socket, attribution de son adresse */
-int client_socket_init(int port) {
-    //creation de la socket
-    int network_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (network_socket == -1) {
-        printf("First socket creation error on server side");
-        exit(1);
-    } 
-
-    //specifier une adresse pour la socket
-    struct sockaddr_in server_adress;
-    server_adress.sin_family = AF_INET;
-    server_adress.sin_port = htons(port);
-    server_adress.sin_addr.s_addr = inet_addr("152.77.82.209");
-
-    /*   entier qui recevra l'etat de la connexion connect() renvoie 0 s'il réussit, ou -1 s'il échoue, auquel  cas  errno
-         contient le code d'erreur. */
-    int connection_status = connect(network_socket, (struct sockaddr *) &server_adress, sizeof(server_adress));
-    
-    if (connection_status == -1) {
-        printf("Connection to server error on client side");
-        exit(1);
-    }
-    return network_socket;
-}
-
-
-// Gestion de la communication avec le serveur
-int communication_to_server(int socket, char *request){
-
-    char buffer[256] = "";
-
-    // Reception des données du serveur
-    memset(buffer, 0, 256);
-    read(socket, buffer, sizeof(buffer));
-    printf("le serveur renvoie : %s\n", buffer);
-    memset(buffer, 0, 256);
-    strcpy(buffer, request);
-    write(socket, buffer, sizeof(buffer));
-    memset(buffer, 0, 256);
-    read(socket, buffer, sizeof(buffer));
-    printf("%s\n", buffer);
-
-    return 0;
-}
-
+// Include des headers
+#include "utilitaires.h"
+#include "init.h"
 
 /*
-    processus client : envoie une demande de connexion au serveur et qui receveras un entier
-                       et l'afficheras à l'écrant
+*   processus client : Se connecte à un serveur, envoie une requête et attend une réponse qu'il pourra interpréter et afficher.
+*       @arguments : int Port number, char* Name of the host you want to connect to
+*       @return : int 0 if success
+*                 int 1 if something goes wrong
 */
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        printf("Wrong number of arguments : 2 arguments needed (int : Port, any : Request) \n");
+        printf("Wrong number of arguments : 2 arguments needed (int : Port, char* : hostname) \n");
         exit(1);
     } else if (atoi(argv[1]) < 9000 || atoi(argv[1]) > 9010) {
-        printf("Wrong argument value : Second argument must be an integer between 9000 and 9010 is expected\n");
+        printf("Wrong argument value : First argument must be an integer between 9000 and 9010 is expected\n");
         exit(1);
     }
-    int socket = client_socket_init(atoi(argv[1]));
-    if (communication_to_server(socket, argv[2]) !=0) {
-        printf("Erreur de communication avec le serveur.");
-        exit(1);
-    }
-    /*
-    fermer la socket    
-    */    
-   close(socket);
 
-   return 0;
+    int socket = client_socket_init(atoi(argv[1]), argv[2]);
+    if (communication_to_server(socket) != 0) {
+        printf("Erreur de communication avec le serveur, la requête n'a pas pu être complétée.");
+        close(socket);
+        exit(1);
+    }
+
+    // Fermeture de la socket
+    close(socket);
+
+    return 0;
 }

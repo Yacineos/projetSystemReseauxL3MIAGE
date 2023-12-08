@@ -20,14 +20,13 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-// Les include [... A DEF]
+// Les include pour traiter les sockets, les adresses IP ainsi que les DNS
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-
-// Les include pour traiter les sockets
 #include <sys/socket.h>
 #include <sys/types.h>
+
 #define MAX_SIZE_STRING 256
 
 /* -----------------------------------------------

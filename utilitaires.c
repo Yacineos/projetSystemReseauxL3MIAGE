@@ -16,43 +16,44 @@ bool est_dans_tableau(int size, char tab_villes[100][MAX_SIZE_STRING], char vill
     return false;
 }
 
-// Fonction qui sera appelé quand le signal SIGCHLD est reçu
-// cette fonction enterine le fils 
+// Fonction qui sera appelé quand le signal SIGCHLD est reçu. Cette fonction enterine le fils 
 void end_child(){
     wait(NULL);
 }
 
 /* Fonction qui permet de vérifier qu'une ville d'arrivée ou de départ reçue en lecture sur la socket de service existe bien dans les tableaux de départ ou d'arrivée
-    @param : ville_struc[] (char) = partie de la structure trajet dans laquelle on stocke la ville lorsqu'on reçoit une ville valide,
-             tableau_villes (struct tableau) = tableau contenant toutes les villes de départ ou d'arrivée
-             socket (int) = socket de service
+
+    @param : ville_struc[] (char) = partie de la structure trajet dans laquelle on stocke la ville lorsqu'on reçoit une ville valide
+    @param : tableau_villes (struct tableau) = tableau contenant toutes les villes de départ ou d'arrivée
+    @param : socket (int) = socket de service
+
+    @return : int 0 si la ville existe bien et envoie un code de succès au client
+              int 1 et envoie un code d'échec au client sinon
 */  
 int verif_des_villes(char ville_struc[MAX_SIZE_STRING], struct tableau tableau_villes, int socket) {
     int error = -1;
-    // Initialisation des variables de la fonction
     char buffer[MAX_SIZE_STRING] = "";
     memset(buffer, 0, MAX_SIZE_STRING);
     // Lecture de la ville reçue et copie dans le buffer
     reception_chaine(buffer, socket);
-    // read(socket, buffer, MAX_SIZE_STRING);
     // Si la ville n'est pas dans le tableau, on envoie au client le code d'échec 1 et on renvoie 1, auquel cas on bouclera sur cette même méthode 
     if (!est_dans_tableau(tableau_villes.n, tableau_villes.tab, buffer)) {
         error = 1;
         write(socket, &error, sizeof(int));
         return 1;
     }
-    //Si on trouve la ville dans le tableau des villes concerné
-    // Copie de la ville dans la structure trajet
+    //Si on trouve la ville dans le tableau des villes concerné : copie de la ville dans la structure trajet
     strcpy(ville_struc, buffer);
-    // Envoi du code de retour de succès de la fonction
     error = 0;
     write(socket, &error, sizeof(int)); 
     return 0;
 }
 
-/* demande au serveur si la ville entré en paramètre existe ou non 
-     redemande la ville à l'utilisateur tant qu'elle existe pas
-     @param une ville : char[100]@return void 
+/*  Lit une chaîne de caractères (ville) sur l'entrée standard et demande au serveur si la ville entrée en paramètre existe ou non.
+    Redemande la ville à l'utilisateur tant qu'elle n'existe pas
+
+    @param :char[MAX_SIZE_STRING] une ville  
+    @return : int 0 si la ville existe
 */
 int ville_existe(int socket, char destination[MAX_SIZE_STRING]){
     char buffer[MAX_SIZE_STRING];
@@ -79,15 +80,15 @@ int ville_existe(int socket, char destination[MAX_SIZE_STRING]){
 }
 
 /*
-    fonction qui envoie n trajet de type trajet vers le client 
+    Fonction qui envoie n trajet de type trajet vers le client 
 
-    @param struct trajet* tableau_de_trajet
-    @param n le nombre de trajet
-    @param socket_service : int 
+    @param : struct trajet* tableau de trajets
+    @param : n le nombre de trajet qu'il y a dans ce tableau
+    @param : int Socket de service 
 
 
-    @result int = 1 false , int = 0 success 
-    la fonction renvoie status d'erreur dès l'erreur sur un seul envoie 
+    @return int = 1 false , int = 0 success 
+    La fonction renvoie status d'erreur dès qu'il y a une erreur sur un envoi 
 */
 int envoie_n_trajets(struct trajet *tableau_de_trajet , int n , int socket_service){
     for(int i = 0 ; i < n ; i++){
@@ -100,17 +101,13 @@ int envoie_n_trajets(struct trajet *tableau_de_trajet , int n , int socket_servi
 }
 
 /*
-    fonction qui envoie un trajet 
-    champs par champs 
-    vers un client en utilisant la socket de service 
+    Fonction qui envoie un trajet champs par champs  vers un client en utilisant la socket de service 
 
-    @param trajet_train : pointeur vers struct trajet 
-    @param socket_service : i
+    @param : struct trajet* :  pointeur vers struct trajet 
+    @param : int Socket de service 
 
-    @return void
+    @return : int status 
 */
-
-
 int envoie_trajet(struct trajet *trajet_train , int socket_service){
     char buffer[MAX_SIZE_STRING];
     // envoie du numéro de train 
@@ -158,6 +155,7 @@ int envoie_trajet(struct trajet *trajet_train , int socket_service){
 
 /*
  * Fonction qui affiche un trajet reçu en paramètre 
+
  *  @param : struct trajet
  */
 
@@ -167,9 +165,10 @@ void affiche_trajet(struct trajet struc_trajet){
 }
 
 /*
-    fonction qui lit un les champs d'un trajet envoyé par le serveur champs par champs et affecte les valeur au trajet passé en paramètre  
+    Fonction qui lit les champs d'un trajet envoyé par le serveur champs par champs et affecte les valeurs au trajet passé en paramètre  
 
-    @param socket : int
+    @param : struct trajet* Pointeur vers une structure trajet
+    @param socket de service : int
     
     @return int 0 success , 1 for error 
 */
@@ -226,10 +225,10 @@ int lecture_trajet(struct trajet *struc_buffer , int socket){
     
     }
 
-/* Fonction qui lit n trajet du serveur et remplie un tableau de trajets 
+/* Fonction qui lit n trajets et remplit un tableau de trajets 
  * 
- * @param struct trajet* à remplir à partir des données lus
- * @param n taille de la liste de trajet 
+ * @param struct trajet* à remplir à partir des données lues
+ * @param n taille de la liste de trajets 
  * 
  * @return int 1 false , 0 true 
  * 
@@ -248,6 +247,7 @@ int lecture_n_trajet(struct trajet *list_trajet_a_remplir, int n , int socket ){
 }
 
 /* Fonction qui supprime un caractère d'une chaîne de caractères 
+
  *  @param : char chaîne de caractères à traiter, char caractère à retirer de la chaîne
  */
 void supprimerCaractere(char chaine[MAX_SIZE_STRING], char caractere) {
@@ -264,13 +264,14 @@ void supprimerCaractere(char chaine[MAX_SIZE_STRING], char caractere) {
 }
 
 /* Fonction qui compare deux horaires passés en paramètre et renvoie un résultat en fonction du plus grand paramètre
- *  @param : char horaire demandé (comparant), char horaire trouvé (comparé)
+ *  @param : char horaire demandé (comparant)
+    @param : char horaire trouvé (comparé)
  *  @return : int 0 si comparant < comparé
  *            int 1 si comparant > comparé
  */ 
 int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve[MAX_SIZE_STRING]){
     char copie_h_depart_demande[MAX_SIZE_STRING];
-    strcpy(copie_h_depart_demande, h_depart_demande); // Copie de la chaîne d'origine
+    strcpy(copie_h_depart_demande, h_depart_demande);
 
     supprimerCaractere(copie_h_depart_demande, ':');
     int h_dep_dem = atoi(copie_h_depart_demande);
@@ -287,8 +288,11 @@ int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve
     return 1;
 }
 
-/* Fonction qui permet de convertir une chaîne de caractère en un float et de calculer un prix par rapport à la chaîne convertie et une éventuelle réduction ou supplément
- * @param : char prix de base du trajet, char "REDUC", "SUPPL" ou une chaîne quelconque
+/* Fonction qui permet de convertir une chaîne de caractère en un float et de calculer un prix par rapport à la chaîne convertie 
+    et une éventuelle réduction (ou supplément)
+ *  @param : char prix de base du trajet
+    @param : char "REDUC", "SUPPL" ou une chaîne quelconque
+
  * @return : float prix du billet calculé 
  */
 float calcule_prix(char prix_trajet[MAX_SIZE_STRING], char tarif[MAX_SIZE_STRING]) {
@@ -303,9 +307,12 @@ float calcule_prix(char prix_trajet[MAX_SIZE_STRING], char tarif[MAX_SIZE_STRING
     return prix;
 }
 
-/* Fonction qui permet de récupérer une chaîne de caractère correspondant à une expression régulière passée en paramètre et de la stocker dans le buffer passé en paramètre
- *  @param : char expression régulière sous forme de chaîne de caractère, char chaîne de caractère à parser, char chaîne de caractère buffer
- *  @return : int 0 si la fonction ne crash pas
+/* Fonction qui permet de récupérer une chaîne de caractère correspondant à une expression régulière passée en paramètre et de la stocker dans le buffer passé en paramètres
+ *  @param : char expression régulière sous forme de chaîne de caractère
+    @param : char chaîne de caractère à parser
+    @param : char chaîne de caractère buffer
+
+ *  @return : int 0 si la fonction aboutit
  */
 int recuperation_champs_fichier(char formula[], char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING]) {
     int formula_size = snprintf(NULL, 0, "%s", formula);
@@ -317,7 +324,10 @@ int recuperation_champs_fichier(char formula[], char string[MAX_SIZE_STRING], ch
 }
 
 /* Fonction qui permet de vérifier qu'une ville de départ passée en paramètres correspond à la ville de départ du trajet dont la chaîne de caractère est passée en paramètres
- *  @param : char chaîne de caratère contenant les données brutes d'un trajet, char chaîne de caractère servant de buffer pour récupérer la ville de départ du premier argument, struct trajet un trajet avec une ville de départ à comparer
+ *  @param : char chaîne de caratère contenant les données brutes d'un trajet
+    @param : char chaîne de caractère servant de buffer pour récupérer la ville de départ du premier argument
+    @param : struct trajet un trajet avec une ville de départ à comparer
+
  *  @return : int 0 si match entre la ville récupérée et la ville de départ du trajet passé en paramètre
  *            int 1 si pas match
  */
@@ -331,7 +341,10 @@ int match_depart(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], str
 }
 
 /* Fonction qui permet de vérifier qu'une ville d'arrivée passée en paramètres correspond à la ville d'arrivée du trajet dont la chaîne de caractère est passée en paramètres
- *  @param : char chaîne de caratère contenant les données brutes d'un trajet, char chaîne de caractère servant de buffer pour récupérer la ville d'arrivée du premier argument, struct trajet un trajet avec une ville d'arrivée à comparer
+ *  @param : char chaîne de caratère contenant les données brutes d'un trajet
+    @param : char chaîne de caractère servant de buffer pour récupérer la ville d'arrivée du premier argument
+    @param : struct trajet un trajet avec une ville d'arrivée à comparer
+
  *  @return : int 0 si match entre la ville récupérée et la ville d'arrivée du trajet passé en paramètre
  *            int 1 si pas match
  */
@@ -343,10 +356,17 @@ int match_arrivee(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], st
     return 1;
 }
 
-/* Fonction qui permet de vérifier qu'un horaire passée en paramètres est inférieur à l'horaire de du trajet dont la chaîne de caractère est passée en paramètres et s'il est, assigne les valeurs de départ et d'arrvée dans la structure 
- * S'il y a déjà un trajet trouvé auparavant, compare aussi le nouvel horaire avec l'horaire du trajet précédemment trouvé. Si le nouvel horaire trouvé < ancien horaire trouvé, on remplace l'ancien trajet par le nouveau 
- *  @param : char horaire demandée sous forme de chaîne de caractères, char chaîne de caratère contenant les données brutes d'un trajet, 
- *           char chaîne de caractère servant de buffer pour récupérer l'horaire d'arrivée du second argument, bool true si un trajet optimal a déjà été trouvé auparavant, struct trajet un trajet dont on veut remplir l'heure de départ et d'arrivée
+/* Fonction qui permet de vérifier qu'un horaire passé en paramètres est inférieur à l'horaire du trajet passé en paramètres et s'il est, 
+    assigne les valeurs de départ et d'arrvée dans la structure.
+ * S'il y a déjà un trajet trouvé auparavant, compare aussi le nouvel horaire avec l'horaire du trajet précédemment trouvé. 
+   Si le nouvel horaire trouvé < ancien horaire trouvé, on remplace l'ancien trajet par le nouveau 
+
+ *  @param : char horaire demandée sous forme de chaîne de caractères
+    @param : char chaîne de caratère contenant les données brutes d'un trajet
+ *  @param : char chaîne de caractère servant de buffer pour récupérer l'horaire d'arrivée du second argument
+    @param : bool true si un trajet optimal a déjà été trouvé auparavant
+    @param : struct trajet un trajet dont on veut remplir l'heure de départ et d'arrivée
+    
  *  @return : int 0 si l'horaire trouvé correspond et que les données ont été correctement assignées à la structure
  *            int 1 si pas match
  */
@@ -1022,7 +1042,6 @@ int branchement_selon_choix_principal_serveur(int choix, int socket, FILE* file,
             exec_choix_trois(socket, file, tableaux_ville);
             break;
         default:
-            printf("Comment êtes-vous arrivé(e) ici...?\n");
             exit(-1);
     }
     return 0;

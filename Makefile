@@ -1,22 +1,13 @@
-all: serveur client multi_client client_test serveur_test
-serveur:
-	gcc serveur.c -o serveur_exec
-
+all: client serveur
 client:
-	gcc client.c -o client_exec
-
-multi_client:
-	gcc multi_client.c -o multi_client_exec
-
-client_test:
 	gcc -c utilitaires.c -o utilitaires.o
 	gcc -c init.c -o init.o
-	gcc -c client_test.c -o client_test.o
-	gcc utilitaires.o init.o client_test.o -o client_test_exec -lm
+	gcc -c client.c -o client.o
+	gcc utilitaires.o init.o client.o -o client_exec
 
-serveur_test:
-	gcc -c serv_test.c -o serv_test.o
-	gcc utilitaires.o init.o serv_test.o -o serveur_test_exec -lm
+serveur:
+	gcc -c serveur.c -o serveur.o
+	gcc utilitaires.o init.o serveur.o -o serveur_exec
 
 clean:
 	rm -f *_exec
