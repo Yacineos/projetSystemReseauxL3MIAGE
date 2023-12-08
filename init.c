@@ -188,7 +188,7 @@ void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
         }
 
         struct sockaddr_in sockaddr_client;
-        int serv_adress_size = sizeof(sockaddr_client);
+        socklen_t serv_adress_size = sizeof(sockaddr_client);
         int client_socket = accept(server_socket, (struct sockaddr *)&sockaddr_client, &serv_adress_size);
 
         if (client_socket == -1)
@@ -242,7 +242,7 @@ int client_socket_init(int port, char* host)
     struct sockaddr_in server_adress;
     server_adress.sin_family = AF_INET;
     server_adress.sin_port = htons(port);
-    memcpy(&(server_adress.sin_addr.s_addr), h->h_addr_list[0], sizeof(h->h_addr_list[0]));
+    memcpy(&(server_adress.sin_addr.s_addr), h->h_addr_list[0], h->h_length);
 
     /*   entier qui recevra l'etat de la connexion connect() renvoie 0 s'il réussit, ou -1 s'il échoue, auquel  cas  errno
          contient le code d'erreur. */

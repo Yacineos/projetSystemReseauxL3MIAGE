@@ -256,7 +256,7 @@ void supprimerCaractere(char chaine[MAX_SIZE_STRING], char caractere) {
 
     strcpy(copie_chaine, chaine); // Copie de la chaîne d'origine
 
-    for (i = 0, j = 0; i < strlen(copie_chaine); ++i) {
+    for (i = 0, j = 0; i < (int) strlen(copie_chaine); ++i) {
         if (copie_chaine[i] != caractere) {
             chaine[j++] = copie_chaine[i];
         }
@@ -281,7 +281,6 @@ int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve
     supprimerCaractere(copie_h_depart_trouve, ':');
     int h_dep_trv = atoi(copie_h_depart_trouve);
 
-    int response;
     if(h_dep_trv >= h_dep_dem){
         return 0;
     }
@@ -416,6 +415,7 @@ int apply_price(char string[MAX_SIZE_STRING], char reduction[MAX_SIZE_STRING], c
 int get_train_number(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet) {
     recuperation_champs_fichier("%127[^;]", string, donnee);
     trajet->num_train = atoi(donnee);
+    return 0;
 }
 
 
@@ -840,11 +840,11 @@ int verif_villes_existent_et_doublon(int client_socket, struct tableaux tableaux
         }
         error = compare_villes(*struc_buffer, client_socket);
     } while (error != 0);
+    return 0;
 }
 
 int exec_choix_un(int client_socket, FILE *file, struct tableaux tableaux_ville)
 {
-    char buffer[MAX_SIZE_STRING] = "";
     struct trajet struc_buffer;
     int error = -1;
     verif_villes_existent_et_doublon(client_socket, tableaux_ville, &struc_buffer);
@@ -862,7 +862,6 @@ int exec_choix_un(int client_socket, FILE *file, struct tableaux tableaux_ville)
 
 int exec_choix_deux(int client_socket, FILE *file, struct tableaux tableaux_ville)
 {
-    char buffer[MAX_SIZE_STRING] = "";
     struct trajet struc_buffer;
     struct trajet trajets_trouves[MAX_SIZE_STRING];
     verif_villes_existent_et_doublon(client_socket, tableaux_ville, &struc_buffer);
@@ -870,11 +869,11 @@ int exec_choix_deux(int client_socket, FILE *file, struct tableaux tableaux_vill
     int array_size = recherche_n_trajets_selon_plage(struc_buffer, file, trajets_trouves);
     write(client_socket, &array_size, sizeof(int));
     envoie_n_trajets(trajets_trouves, array_size, client_socket);
+    return 0;
 }
 
 int exec_choix_trois(int client_socket, FILE *file, struct tableaux tableaux_ville)
 {
-    char buffer[MAX_SIZE_STRING] = "";
     struct trajet struc_buffer;
     struct trajet trajets_trouves[MAX_SIZE_STRING];
     verif_villes_existent_et_doublon(client_socket, tableaux_ville, &struc_buffer);
@@ -926,8 +925,6 @@ int requete_choix_un(int socket)
 
 int requete_choix_deux(int socket)
 {
-    char buffer[MAX_SIZE_STRING] = "";
-    struct trajet struc_buffer;
     struct trajet trajets_trouves[MAX_SIZE_STRING];
     int array_size = 0;
     requete_verif_villes(socket);
@@ -947,8 +944,6 @@ int requete_choix_deux(int socket)
 
 int requete_choix_trois(int socket)
 {
-    char buffer[MAX_SIZE_STRING] = "";
-    struct trajet struc_buffer;
     struct trajet trajets_trouves[MAX_SIZE_STRING];
     int array_size = 0;
     int array_index = 0;
