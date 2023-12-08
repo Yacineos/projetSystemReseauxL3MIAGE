@@ -16,7 +16,15 @@
         "string": "c",
         "compare": "c",
         "random": "c",
-        "in.h": "c"
+        "in.h": "c",
+        "init.h": "c",
+        "array": "c",
+        "hash_map": "c",
+        "bitset": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "ranges": "c",
+        "utility": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
