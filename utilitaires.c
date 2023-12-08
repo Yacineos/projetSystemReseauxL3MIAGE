@@ -48,7 +48,7 @@ int verif_des_villes(char ville_struc[MAX_SIZE_STRING], struct tableau tableau_v
     return 0;
 }
 
-/* demande au serveur sila ville entré en paramètre existe ou non 
+/* demande au serveur si la ville entré en paramètre existe ou non 
      redemande la ville à l'utilisateur tant qu'elle existe pas
      @param une ville : char[100]@return void 
 */
@@ -60,7 +60,7 @@ int ville_existe(int socket, char destination[MAX_SIZE_STRING]){
         if (i != 0) {
             printf("Cette ville n'existe pas dans notre base de données.\n");
         }
-        printf("Entrez une ville de %s : ", destination);
+        printf("Entrez une ville %s : ", destination);
         memset(buffer, 0, MAX_SIZE_STRING);
         fgets(buffer, MAX_SIZE_STRING, stdin);
         buffer[strcspn(buffer, "\n")] = 0;
@@ -466,7 +466,6 @@ void lecture_horaire(char horaire[MAX_SIZE_STRING]){
     do{
         printf("Entrez un horaire valide (hh:mm) : ");
         scanf("%s",horaire);
-        printf("\n");
     }while( test_horaire(horaire) == 1 ); 
 }
 
@@ -791,21 +790,35 @@ int select_choix(int choice, struct trajet *trajets_trouves, int array_size)
     }
 }
 
+int compare_villes(struct trajet trajet, int socket) {
+    int error = 0;
+    if (strcmp(trajet.ville_d, trajet.ville_a) == 0) {
+        error = 1;
+        write(socket, &error, sizeof(int));
+        return error; 
+    }
+    write(socket, &error, sizeof(int));
+    return error;
+}
+
 int exec_choix_un(int client_socket, FILE *file, struct tableaux tableaux_ville)
 {
     char buffer[MAX_SIZE_STRING] = "";
     struct trajet struc_buffer;
     int success = 1;
-    int error = 0;
-    while (success == 1)
-    {
-        success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
-    }
-    success = 1;
-    while (success == 1)
-    {
-        success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
-    }
+    int error = -1;
+    do {
+        while (success == 1)
+        {
+            success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
+        }
+        success = 1;
+        while (success == 1)
+        {
+            success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
+        }
+        error = compare_villes(struc_buffer, client_socket);
+    } while (error != 0);
     reception_horaire(&struc_buffer, client_socket, 0);
     error = recherche_trajet(&struc_buffer, file);
     if (error != 0) {
@@ -869,15 +882,20 @@ int requete_choix_un(int socket)
     struct trajet struc_buffer;
     int error = 0;
 
-    // Définition du paramètre pour la fonction suivante
-    strcpy(buffer, "départ");
-    // Saisie, envoi et vérification de la ville de départ
-    ville_existe(socket, buffer);
+    do {
+        // Définition du paramètre pour la fonction suivante
+        strcpy(buffer, "de départ");
+        // Saisie, envoi et vérification de la ville de départ
+        ville_existe(socket, buffer);
 
-    // Définition du paramètre pour la fonction suivante
-    strcpy(buffer, "arrivée");
-    // Saisie, envoi et vérification de la ville d'arrivée
-    ville_existe(socket, buffer);
+        // Définition du paramètre pour la fonction suivante
+        strcpy(buffer, "d'arrivée");
+        // Saisie, envoi et vérification de la ville d'arrivée
+        ville_existe(socket, buffer);
+        printf("\n");
+        read(socket, &error, sizeof(int));
+    } while (error != 0); 
+
     lecture_et_envoi_horaire(buffer, socket);
     read(socket, &error, sizeof(int));
     if (error != 0) {
@@ -985,6 +1003,7 @@ int choix_utilisateur_menu_principal() {
         printf("\n");
         choix = atoi(buffer);
     }
+    printf("\n");
     return choix;
 }
 
