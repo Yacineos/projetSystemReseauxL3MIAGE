@@ -268,6 +268,7 @@ void supprimerCaractere(char chaine[MAX_SIZE_STRING], char caractere) {
     @param : char horaire trouvé (comparé)
  *  @return : int 0 si comparant < comparé
  *            int 1 si comparant > comparé
+ *            int 2 si comparant == comparé
  */ 
 int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve[MAX_SIZE_STRING]){
     char copie_h_depart_demande[MAX_SIZE_STRING];
@@ -281,8 +282,10 @@ int compare_horaire(char h_depart_demande[MAX_SIZE_STRING], char h_depart_trouve
     supprimerCaractere(copie_h_depart_trouve, ':');
     int h_dep_trv = atoi(copie_h_depart_trouve);
 
-    if(h_dep_trv >= h_dep_dem){
+    if(h_dep_trv > h_dep_dem){
         return 0;
+    } else if (h_dep_trv == h_dep_dem) {
+        return 2;
     }
     return 1;
 }
@@ -370,7 +373,7 @@ int match_arrivee(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], st
  *            int 1 si pas match
  */
 int match_horaire(char horaire_demande[MAX_SIZE_STRING], char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], bool result_found, struct trajet *trajet) {
-    if ((compare_horaire(horaire_demande, donnee) == 0 && !result_found) || (compare_horaire(horaire_demande, donnee) == 0 && compare_horaire(donnee, trajet->heure_d) == 0 && result_found)) {
+    if (((compare_horaire(horaire_demande, donnee) == 0 || compare_horaire(horaire_demande, donnee) == 2) && !result_found) || ((compare_horaire(horaire_demande, donnee) == 0 || compare_horaire(horaire_demande, donnee) == 2) && (compare_horaire(donnee, trajet->heure_d) == 0 || compare_horaire(donnee, trajet->heure_d) == 2) && result_found)) {
         strcpy(trajet->heure_d, donnee);
         recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee);
         strcpy(trajet->heure_a, donnee);
@@ -388,7 +391,7 @@ int match_horaire(char horaire_demande[MAX_SIZE_STRING], char string[MAX_SIZE_ST
  *            int 1 sinon
  */           
 int match_plage_horaire(struct trajet trajet, char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING], struct trajet *trajet_a_tester) {
-    if (compare_horaire(trajet.heure_d, donnee) == 0 && compare_horaire(donnee, trajet.heure_a) == 0) {
+    if ((compare_horaire(trajet.heure_d, donnee) == 0 || compare_horaire(trajet.heure_d, donnee) == 2) && (compare_horaire(donnee, trajet.heure_a) == 0 || compare_horaire(donnee, trajet.heure_a) == 2)) {
         strcpy(trajet_a_tester->heure_d, donnee);
         recuperation_champs_fichier("%*[^;];%*[^;];%*[^;];%*[^;];%127[^;]", string, donnee);
         strcpy(trajet_a_tester->heure_a, donnee);
@@ -559,7 +562,7 @@ int lecture_et_envoie_plage_horaire(int socket){
         lecture_horaire(horaire1);
         printf("Horaire 2 -- ");
         lecture_horaire(horaire2);
-        //Vérifie que la 2 horaire est supérieur à la première
+        //Vérifie que la 2 horaire est supérieure à la première
             // si c'est pas le cas on redemande les 2 horaires et on affiche l'erreur
     }while(compare_horaire(horaire1,horaire2) != 0 );
     // appel envoie_horaire 2 fois 
@@ -667,6 +670,7 @@ int recherche_trajet(struct trajet *trajet, FILE *fichier_trajets)
     char reduction[MAX_SIZE_STRING];
     // Variable qui indique si nous avons trouvé un train optimal ou si aucun train n'a été trouvé
     bool result_found = false;
+    int match = -1;
     // Le fichier a déjà été parcouru à l'initialisation du serveur, on remet donc le curseur au début du fichier
     rewind(fichier_trajets);
     while (!feof(fichier_trajets))
@@ -680,11 +684,16 @@ int recherche_trajet(struct trajet *trajet, FILE *fichier_trajets)
             if (match_arrivee(string, donnee_trouvee, trajet) == 0)
             {
                 // Vérif que l'horaire correspond
-                if (match_horaire(horaire_demande, string, donnee_trouvee, result_found, trajet) == 0)
+                match = match_horaire(horaire_demande, string, donnee_trouvee, result_found, trajet);
+                if (match == 0)
                 {
                     apply_price(string, reduction, donnee_trouvee, trajet);
                     get_train_number(string, donnee_trouvee, trajet);
                     result_found = true;
+                } else if (match == 2) {
+                    apply_price(string, reduction, donnee_trouvee, trajet);
+                    get_train_number(string, donnee_trouvee, trajet);
+                    return 2;
                 }
             }
         }
@@ -914,13 +923,19 @@ int requete_choix_un(int socket)
     requete_verif_villes(socket);
     lecture_et_envoi_horaire(buffer, socket);
     read(socket, &error, sizeof(int));
-    if (error != 0) {
-        printf("Navrés, aucun train n'est disponible à partir de cet horaire aujourd'hui.\n");
-        return 1;
+    if (error == 0) {
+        printf("Navrés, aucun train effectuant l'itinéraire demandé n'est prévu à cet horaire, voici le train le plus proche de votre requête : \n");
+        lecture_trajet(&struc_buffer, socket);
+        affiche_trajet(struc_buffer);
+        return 0;
+    } else if (error == 2) {
+        lecture_trajet(&struc_buffer, socket);
+        printf("Un train correspondant à votre demande a été trouvé : \n");
+        affiche_trajet(struc_buffer);
+        return 0;
     }
-    lecture_trajet(&struc_buffer, socket);
-    affiche_trajet(struc_buffer);
-    return 0;
+    printf("Navrés, aucun train n'est disponible à partir de cet horaire aujourd'hui.\n");
+    return 1;
 }
 
 int requete_choix_deux(int socket)
