@@ -982,19 +982,24 @@ int affichage_menu_principal() {
     return 0;
 }
 
+void clear_input_buffer() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
 int choix_utilisateur_menu_principal() {
     affichage_menu_principal();
-    char buffer[MAX_SIZE_STRING];
-    fgets(buffer, MAX_SIZE_STRING, stdin);
-    buffer[strcspn(buffer, "\n")] = 0;
-    int choix = atoi(buffer);
-    while (choix != 1 && choix != 2 && choix != 3 && choix != 4) {
-        printf("Erreur de saisie, entrez 1 , 2 , 3 ou 4 : ");
-        fgets(buffer, MAX_SIZE_STRING, stdin);
-        buffer[strcspn(buffer, "\n")] = 0;
+    int choix;
+    int iteration = 0;
+    do {
+        if (iteration != 0) {
+            printf("Erreur de saisie, entrez 1 , 2 , 3 ou 4 : ");
+        }
+        scanf("%d", &choix);
+        clear_input_buffer();
         printf("\n");
-        choix = atoi(buffer);
-    }
+        iteration++;
+    } while (choix != 1 && choix != 2 && choix != 3 && choix != 4);
     printf("\n");
     return choix;
 }
@@ -1037,7 +1042,7 @@ int branchement_selon_choix_principal_serveur(int choix, int socket, FILE* file,
             exec_choix_trois(socket, file, tableaux_ville);
             break;
         default:
-            exit(-1);
+            ;
     }
     return 0;
 }

@@ -180,13 +180,6 @@ void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
 
     while (true)
     {
-        // Attribution du rôle de socket d'écoute à notre socket (listen()) | 5 => Taille max. de la file d'attente de connexion
-        if (listen(server_socket, 5) != 0)
-        {
-            perror("Listen failed");
-            exit(1);
-        }
-
         struct sockaddr_in sockaddr_client;
         socklen_t serv_adress_size = sizeof(sockaddr_client);
         int client_socket = accept(server_socket, (struct sockaddr *)&sockaddr_client, &serv_adress_size);
@@ -206,8 +199,11 @@ void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
             case 0:
                 close(server_socket);
                 int choix = -1;
-                read(client_socket, &choix, sizeof(int));
-                branchement_selon_choix_principal_serveur(choix, client_socket, file, tableaux_ville);
+                while (choix != 4) {
+                    read(client_socket, &choix, sizeof(int));
+                    branchement_selon_choix_principal_serveur(choix, client_socket, file, tableaux_ville);
+                }
+                printf("J'ai pas loop\n");
 
                 // Fermeture de la socket de service (close())
                 close(client_socket);
@@ -267,9 +263,13 @@ int client_socket_init(int port, char* host)
 int communication_to_server(int socket)
 {
     int menu = choix_utilisateur_menu_principal();
-    if (branchement_selon_choix_principal_client(menu, socket) == 0) {
-        printf("Requête complétée, merci et au revoir !\n");
-        return 0;
+    while (menu != 4) {
+        if (branchement_selon_choix_principal_client(menu, socket) == 0) {
+            printf("Requête complétée!\n");
+            menu = choix_utilisateur_menu_principal();
+        }
+
     }
-    return -1;
+    printf("Merci et aurevoir !\n");
+    return 0;
 }

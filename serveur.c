@@ -27,9 +27,14 @@ int main(int argc, char *argv[]) {
     struct tableaux tableaux_villes = server_data_init(trajets);
 
     int server_socket = server_socket_init(atoi(argv[1]));
-
     if(signal_init() != 0){
         printf("Erreur lors du traitement du signal");
+        exit(1);
+    }
+    // Attribution du rôle de socket d'écoute à notre socket (listen()) | 5 => Taille max. de la file d'attente de connexion
+    if (listen(server_socket, 5) != 0)
+    {
+        perror("Listen failed");
         exit(1);
     }
 

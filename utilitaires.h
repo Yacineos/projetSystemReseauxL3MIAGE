@@ -163,6 +163,8 @@ int requete_choix_trois(int socket);
 
 int affichage_menu_principal();
 
+void clear_input_buffer();
+
 int choix_utilisateur_menu_principal();
 
 int branchement_selon_choix_principal_client(int choix, int socket);
