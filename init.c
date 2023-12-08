@@ -193,11 +193,7 @@ void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
             close(server_socket);
             int choix = -1;
             read(client_socket, &choix, sizeof(int));
-
             branchement_selon_choix_principal_serveur(choix, client_socket, file, tableaux_ville);
-
-            // Envoi du résultat de la requête client grâce au socket de service (write())
-            // write(client_socket, &struc_buffer, sizeof(struc_buffer));
 
             // Fermeture de la socket de service (close())
             close(client_socket);
@@ -211,7 +207,7 @@ void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *file)
 }
 
 /* Creation de la socket de service côté client et attribution de son adresse */
-int client_socket_init(int port)
+int client_socket_init(int port, char* host)
 {
     // creation de la socket
     int network_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -222,11 +218,13 @@ int client_socket_init(int port)
     }
 
     // specifier une adresse pour la socket
+    struct hostent* h = gethostbyname(host);
+
     struct sockaddr_in server_adress;
     server_adress.sin_family = AF_INET;
     server_adress.sin_port = htons(port);
     // Peut être changé avec une macro
-    server_adress.sin_addr.s_addr = INADDR_ANY;
+    memcpy(&(server_adress.sin_addr.s_addr), h->h_addr_list[0], sizeof(h->h_addr_list[0]));
 
     /*   entier qui recevra l'etat de la connexion connect() renvoie 0 s'il réussit, ou -1 s'il échoue, auquel  cas  errno
          contient le code d'erreur. */

@@ -1004,9 +1004,11 @@ int branchement_selon_choix_principal_client(int choix, int socket) {
             break;
         case 4:
             printf("Merci et au revoir.\n");
+            close(socket);
             exit(0);
         default:
             printf("Comment êtes-vous arrivé(e) ici...?\n");
+            close(socket);
             exit(-1);
     }
     return 0;

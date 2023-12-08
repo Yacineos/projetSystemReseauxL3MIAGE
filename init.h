@@ -41,6 +41,6 @@ int signal_init();
 void server_loop(int server_socket, struct tableaux tableaux_ville, FILE *fichier_trajets);
 
 // Fonctions côté client
-int client_socket_init(int port);
+int client_socket_init(int port, char* host);
 
 int communication_to_server(int socket);
