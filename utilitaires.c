@@ -28,23 +28,25 @@ void end_child(){
              socket (int) = socket de service
 */  
 int verif_des_villes(char ville_struc[MAX_SIZE_STRING], struct tableau tableau_villes, int socket) {
+    int error = -1;
     // Initialisation des variables de la fonction
     char buffer[MAX_SIZE_STRING] = "";
     memset(buffer, 0, MAX_SIZE_STRING);
     // Lecture de la ville reçue et copie dans le buffer
-    read(socket, buffer, MAX_SIZE_STRING);
+    reception_chaine(buffer, socket);
+    // read(socket, buffer, MAX_SIZE_STRING);
     // Si la ville n'est pas dans le tableau, on envoie au client le code d'échec 1 et on renvoie 1, auquel cas on bouclera sur cette même méthode 
     if (!est_dans_tableau(tableau_villes.n, tableau_villes.tab, buffer)) {
-        strcpy(buffer, "1");
-        write(socket, buffer, sizeof(buffer));
+        error = 1;
+        write(socket, &error, sizeof(int));
         return 1;
-    } else { // Si on trouve la ville dans le tableau des villes concerné
-        // Copie de la ville dans la structure trajet
-        strcpy(ville_struc, buffer);
-        // Envoi du code de retour de succès de la fonction
-        strcpy(buffer, "0");
-        write(socket, buffer, sizeof(buffer)); 
     }
+    //Si on trouve la ville dans le tableau des villes concerné
+    // Copie de la ville dans la structure trajet
+    strcpy(ville_struc, buffer);
+    // Envoi du code de retour de succès de la fonction
+    error = 0;
+    write(socket, &error, sizeof(int)); 
     return 0;
 }
 
@@ -54,6 +56,7 @@ int verif_des_villes(char ville_struc[MAX_SIZE_STRING], struct tableau tableau_v
 */
 int ville_existe(int socket, char destination[MAX_SIZE_STRING]){
     char buffer[MAX_SIZE_STRING];
+    int error = 1;
     int i = 0;
     do{
         // Demande util de la ville
@@ -65,12 +68,13 @@ int ville_existe(int socket, char destination[MAX_SIZE_STRING]){
         fgets(buffer, MAX_SIZE_STRING, stdin);
         buffer[strcspn(buffer, "\n")] = 0;
         // Envoie de la ville à vérifier au serveur
-        write(socket, buffer, MAX_SIZE_STRING);
+        envoie_chaine(buffer, strlen(buffer), socket);
+        // write(socket, buffer, MAX_SIZE_STRING);
         // Récupération du code de succès de la vérification serveur
         memset(buffer, 0, MAX_SIZE_STRING);
-        read(socket, buffer , MAX_SIZE_STRING);
+        read(socket, &error, sizeof(int));
         i++;
-    } while(strcmp(buffer,"1") == 0);
+    } while(error != 0);
     return 0;
 }
 
@@ -117,28 +121,28 @@ int envoie_trajet(struct trajet *trajet_train , int socket_service){
     memset(buffer,0,MAX_SIZE_STRING);
     strcpy(buffer,trajet_train->ville_d);
     // envoie de la ville de départ 
-    if(write(socket_service, &buffer, MAX_SIZE_STRING) == -1){
+    if(envoie_chaine(buffer, strlen(buffer), socket_service) == 1){
         perror("write envoie_trajet");
         return 1;
     }
     memset(buffer,0,MAX_SIZE_STRING);
     strcpy(buffer,trajet_train->ville_a);
     // envoie de la ville d'arrivée
-    if(write(socket_service, &buffer, MAX_SIZE_STRING) == -1){
+    if(envoie_chaine(buffer, strlen(buffer), socket_service) == 1){
         perror("write envoie_trajet");
         return 1;
     }
     memset(buffer,0,MAX_SIZE_STRING);
     strcpy(buffer,trajet_train->heure_d);
     // envoie de l'heure de départ 
-    if(write(socket_service, &buffer,MAX_SIZE_STRING) == -1){
+    if(envoie_chaine(buffer, strlen(buffer), socket_service) == 1){
         perror("write envoie_trajet");
         return 1;        
     }
     memset(buffer,0,MAX_SIZE_STRING);
     strcpy(buffer,trajet_train->heure_a);
     // envoie de l'heure d'arrivée 
-    if(write(socket_service, &buffer,MAX_SIZE_STRING) == -1){
+    if(envoie_chaine(buffer, strlen(buffer), socket_service) == 1){
         perror("write envoie_trajet");
         return 1;
     }
@@ -181,7 +185,7 @@ int lecture_trajet(struct trajet *struc_buffer , int socket){
 
     // lecture ville départ 
     memset(buffer, 0, MAX_SIZE_STRING);
-    if(read(socket, buffer,MAX_SIZE_STRING) == -1 ){
+    if(reception_chaine(buffer, socket) == 1 ){
         perror("erreur lecture trajet");
         return 1 ;
     }
@@ -189,7 +193,7 @@ int lecture_trajet(struct trajet *struc_buffer , int socket){
     // lecture ville arrivée
     memset(buffer, 0, MAX_SIZE_STRING);
     
-    if(read(socket, buffer, sizeof(buffer)) == -1){
+   if(reception_chaine(buffer, socket) == 1 ){
         perror("erreur lecture trajet");
         return 1 ;        
     }
@@ -197,7 +201,7 @@ int lecture_trajet(struct trajet *struc_buffer , int socket){
     
     // lecture heure départ 
     memset(buffer, 0, MAX_SIZE_STRING);
-    if(read(socket, buffer, MAX_SIZE_STRING) == -1){
+    if(reception_chaine(buffer, socket) == 1 ){
         perror("erreur lecture trajet");
         return 1 ;
     }
@@ -205,7 +209,7 @@ int lecture_trajet(struct trajet *struc_buffer , int socket){
     
     // lecture heure arrivée 
     memset(buffer, 0, MAX_SIZE_STRING);
-    if(read(socket, buffer,MAX_SIZE_STRING) == -1 ){
+    if(reception_chaine(buffer, socket) == 1 ){
         perror("erreur lecture trajet");
         return 1 ;
     }
@@ -409,7 +413,7 @@ int get_train_number(char string[MAX_SIZE_STRING], char donnee[MAX_SIZE_STRING],
 int reception_horaire(struct trajet *trajet_courant , int socket , int type_horaire){
     char buffer[MAX_SIZE_STRING];
     memset(buffer , 0 , MAX_SIZE_STRING);
-    if(read(socket,&buffer,MAX_SIZE_STRING) == -1){
+    if(reception_chaine(buffer, socket) == 1){
         perror("erreur lecture horaire");
         return 1 ;
     }
@@ -487,8 +491,8 @@ int envoie_horaire(char horaire[MAX_SIZE_STRING] , int socket){
     char buffer[MAX_SIZE_STRING] ;
     memset(buffer , 0 , MAX_SIZE_STRING);
     strcpy(buffer,horaire);
-    if(write(socket , &buffer , MAX_SIZE_STRING) == -1){
-        perror("erreur dans l'envoie de l'heure");
+    if(envoie_chaine(buffer, strlen(buffer), socket) == 1){
+        perror("erreur dans l'envoi de l'heure");
         return 1 ;
     }
     return 0;
@@ -1021,6 +1025,71 @@ int branchement_selon_choix_principal_serveur(int choix, int socket, FILE* file,
             printf("Comment êtes-vous arrivé(e) ici...?\n");
             exit(-1);
     }
+    return 0;
+}
+
+/*
+    Fonction qui envoie la taille d'une chaine de caractère avant d'envoyer la chaîne de caractère  
+
+    @param la chaîne de caractère de type char[MAX_SIZE_CHAINE]
+    @param int n taille de la chaine 
+    @param int socket 
+
+    @return int status 1 failure 
+                       0 success 
+
+*/
+int envoie_chaine(char *chaine, int n, int socket) {
+    n++;
+    char buffer[n];
+
+    // Envoie de la taille
+    if (write(socket, &n, sizeof(int)) == -1) {
+        perror("write taille envoie_chaine");
+        return 1;
+    }
+
+    // On vide le buffer
+    memset(buffer, 0, n);
+    // Le buffer reçoit la chaîne
+    strcpy(buffer, chaine);
+
+    // On envoie la chaîne
+    if (write(socket, &buffer, n) == -1) {
+        perror("write chaine envoie_chaine");
+        return 1;
+    }
+
+    return 0;
+}
+
+/*
+    Fonction qui recoit la taille d'une chaine de caractère avant de la recevoir 
+    @param la chaîne de caractère de type char* là où on va écrire la chaîne lu 
+    @param int socket 
+
+    @return int status n taille de la chaine lu  
+                       0 failure 
+
+*/
+int reception_chaine(char chaine_lu[MAX_SIZE_STRING], int socket) {
+    int n = 0; // Taille de la chaîne qu'on va lire
+
+    // Lecture du numéro de train
+    if (read(socket, &n, sizeof(int)) == -1) {
+        perror("erreur lecture taille reception_chaine");
+        return 1;
+    }
+
+    char buffer[n];
+    memset(buffer, 0, n);
+    if (read(socket, buffer, n) == -1) {
+        perror("erreur lecture trajet");
+        return 1;
+    }
+
+    strcpy(chaine_lu, buffer);
+
     return 0;
 }
 

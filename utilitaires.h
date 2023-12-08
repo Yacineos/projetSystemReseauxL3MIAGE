@@ -170,4 +170,8 @@ int branchement_selon_choix_principal_client(int choix, int socket);
 
 int branchement_selon_choix_principal_serveur(int choix, int socket, FILE* file, struct tableaux tableaux_ville);
 
+int envoie_chaine(char *chaine, int n, int socket);
+
+int reception_chaine(char chaine_lu[MAX_SIZE_STRING], int socket);
+
 #endif // UTILITAIRES_H
