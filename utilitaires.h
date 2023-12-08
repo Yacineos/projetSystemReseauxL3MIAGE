@@ -144,6 +144,10 @@ int select_trajet_le_plus_rapide(struct trajet *trajets_trouves, int array_size)
 
 int select_choix(int choice, struct trajet *trajets_trouves, int array_size);
 
+int compare_villes(struct trajet trajet, int socket);
+
+int verif_villes_existent_et_doublon(int client_socket, struct tableaux tableaux_villes, struct trajet struc_buffer);
+
 int exec_choix_un(int client_socket, FILE *file, struct tableaux tableaux_ville);
 
 int exec_choix_deux(int client_socket, FILE *file, struct tableaux tableaux_ville);
@@ -163,4 +167,5 @@ int choix_utilisateur_menu_principal();
 int branchement_selon_choix_principal_client(int choix, int socket);
 
 int branchement_selon_choix_principal_serveur(int choix, int socket, FILE* file, struct tableaux tableaux_ville);
+
 #endif // UTILITAIRES_H

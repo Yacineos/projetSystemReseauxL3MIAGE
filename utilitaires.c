@@ -791,14 +791,31 @@ int select_choix(int choice, struct trajet *trajets_trouves, int array_size)
 }
 
 int compare_villes(struct trajet trajet, int socket) {
-    int error = 0;
+    int error = 1;
     if (strcmp(trajet.ville_d, trajet.ville_a) == 0) {
-        error = 1;
         write(socket, &error, sizeof(int));
         return error; 
     }
+    error = 0;
     write(socket, &error, sizeof(int));
     return error;
+}
+
+int verif_villes_existent_et_doublon(int client_socket, struct tableaux tableaux_villes, struct trajet struc_buffer) {
+    int error = -1;
+    do {
+        int success = 1;
+        while (success == 1)
+        {
+            success = verif_des_villes(struc_buffer.ville_d, tableaux_villes.tabVilleDepart, client_socket);
+        }
+        success = 1;
+        while (success == 1)
+        {
+            success = verif_des_villes(struc_buffer.ville_a, tableaux_villes.tabVilleArrivee, client_socket);
+        }
+        error = compare_villes(struc_buffer, client_socket);
+    } while (error != 0);
 }
 
 int exec_choix_un(int client_socket, FILE *file, struct tableaux tableaux_ville)
@@ -807,18 +824,7 @@ int exec_choix_un(int client_socket, FILE *file, struct tableaux tableaux_ville)
     struct trajet struc_buffer;
     int success = 1;
     int error = -1;
-    do {
-        while (success == 1)
-        {
-            success = verif_des_villes(struc_buffer.ville_d, tableaux_ville.tabVilleDepart, client_socket);
-        }
-        success = 1;
-        while (success == 1)
-        {
-            success = verif_des_villes(struc_buffer.ville_a, tableaux_ville.tabVilleArrivee, client_socket);
-        }
-        error = compare_villes(struc_buffer, client_socket);
-    } while (error != 0);
+    verif_villes_existent_et_doublon(client_socket, tableaux_ville, struc_buffer);
     reception_horaire(&struc_buffer, client_socket, 0);
     error = recherche_trajet(&struc_buffer, file);
     if (error != 0) {
