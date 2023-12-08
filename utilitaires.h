@@ -146,13 +146,15 @@ int select_choix(int choice, struct trajet *trajets_trouves, int array_size);
 
 int compare_villes(struct trajet trajet, int socket);
 
-int verif_villes_existent_et_doublon(int client_socket, struct tableaux tableaux_villes, struct trajet struc_buffer);
+int verif_villes_existent_et_doublon(int client_socket, struct tableaux tableaux_villes, struct trajet *struc_buffer);
 
 int exec_choix_un(int client_socket, FILE *file, struct tableaux tableaux_ville);
 
 int exec_choix_deux(int client_socket, FILE *file, struct tableaux tableaux_ville);
 
 int exec_choix_trois(int client_socket, FILE *file, struct tableaux tableaux_ville);
+
+int requete_verif_villes(int socket);
 
 int requete_choix_un(int socket);
 
